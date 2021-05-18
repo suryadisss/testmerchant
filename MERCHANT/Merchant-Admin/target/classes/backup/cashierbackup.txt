@@ -1,0 +1,412 @@
+package org.idx.lms.controllers;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.idx.lms.libs.ConfigApps;
+import org.idx.lms.libs.RestServiceUnirest;
+import org.idx.lms.libs.TokenRegen;
+import org.idx.lms.model.UploadTest;
+import org.idx.lms.model.cekhr.CekEmployeItem;
+import org.idx.lms.model.kinicintaku.cekBookPhoneItem;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+@RequestMapping("Cashier")
+public class CashierController {
+	private ConfigApps con = new ConfigApps();
+	//private String SESSION_ID = "";
+	//private String BranchCode = "";
+	//private String RSHID = "";
+
+	private String API_SERVER = con.getConfigValue("ServerAPI");
+	private String API_CUSTOMER = con.getConfigValue("ServerAPI-CUST");
+	private String API_LMS = con.getConfigValue("ServerAPI-LMS");
+	private String API_NOTIF = con.getConfigValue("ServerAPI-NOTIF");
+	private String LOCAL_SERVER = con.getConfigValue("ServerLocal");
+
+	TokenRegen token = new TokenRegen();
+
+	private boolean checkSession(HttpSession session, String level) {
+		boolean bol = false;
+		if (session.getAttribute("accesskey") != null) {
+			JSONArray jMenu = new JSONArray(session.getAttribute("session_menu").toString());
+			for (int i = 0; i < jMenu.length(); i++) {
+				if (jMenu.getJSONObject(i).getString("ldlmdescription").equals(level)) {
+					bol = true;
+				}
+			}
+		}
+		return bol;
+	}
+
+	@RequestMapping(method = RequestMethod.GET)
+	public ModelAndView CashierView(ModelMap model, HttpSession session, HttpServletRequest req) {
+		if (checkSession(session, "lvl_act_ks")) {
+			token.regenToken(session);
+			//this.SESSION_ID = session.getAttribute("session_id").toString();
+			//this.BranchCode = session.getAttribute("branchcode").toString();
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("CashierDetailMainView", model);
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+
+	}
+
+	@RequestMapping(value = "/getSummary/{id}")
+	public ModelAndView getSummary(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_ks")) {
+			token.regenToken(session);
+			model.addAttribute("id", id);
+			session.setAttribute("rshID", id);
+			//this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("name", session.getAttribute("usrname").toString());
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintakuSummary", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getcustinfo", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getCustomerInfo(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String id = request.getParameter("id").toString();
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/ttable",
+				session.getAttribute("accesskey").toString(), new JSONObject().put("rsh_id", id).toString());
+
+	}
+
+	@RequestMapping(value = "/searchingBookingCode", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String searchingBookingCode(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String booking = request.getParameter("booking").toString();
+		String branch = session.getAttribute("branchcode").toString();;
+		String field = request.getParameter("field").toString();
+
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/cashierlist",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("booking", booking).put("bnc_code", branch).put("field", field).toString());
+
+	}
+
+	@RequestMapping(value = "/searchingPhoneNumber", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String searchingPhoneNumber(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String phone = request.getParameter("phone").toString();
+		String branch = session.getAttribute("branchcode").toString();
+		String field = request.getParameter("field").toString();
+
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/cashierlist",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("phone", phone).put("bnc_code", branch).put("field", field).toString());
+	}
+
+	@RequestMapping(value = "/Decline", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String Decline(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String rshid = request.getParameter("rsh_id").toString();
+		String cashier = session.getAttribute("session_id").toString();
+		String notes = request.getParameter("notes").toString();
+
+		String x = "";
+		try {
+			JSONObject jsonz = new JSONObject(new RestServiceUnirest().requestPost(
+					this.API_SERVER + "/kinicintaku/cashier/decline", session.getAttribute("accesskey").toString(),
+					new JSONObject().put("rsh_id", rshid).put("cashier", cashier).put("notes", notes).toString()));
+
+			x = jsonz.toString();
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+
+	}
+
+	@RequestMapping(value = "/saveSummary/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String saveSummary(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		/*
+		 * return new RestServiceUnirest().requestPost(this.API_LMS +
+		 * "/submission/summarize", session.getAttribute("accesskey").toString(), new
+		 * JSONObject().put("rsh_id", this.RSHID).toString());
+		 */
+
+		if (session.getAttribute("rshID") != null
+				&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+			String rsh_id = session.getAttribute("rshID").toString();
+			rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+			return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+					session.getAttribute("accesskey").toString(),
+					new JSONObject().put("rsh_id", rsh_id).put("decision ", "CashierApproved").toString());
+
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+
+	}
+
+	@RequestMapping(value = "/saveSummary2/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String saveSummary2(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		if (session.getAttribute("rshID") != null
+				&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+			String rsh_id = session.getAttribute("rshID").toString();
+			rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+			return new RestServiceUnirest().requestPost(this.API_LMS + "/submission/summarize",
+					session.getAttribute("accesskey").toString(),
+					new JSONObject().put("rsh_id", rsh_id).toString());
+
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+
+	}
+
+	@RequestMapping(value = "/upload_doc/{id}")
+	public ModelAndView getKiniCintakuUpload(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			session.setAttribute("rshID", id);
+			model.addAttribute("id", id);
+			byte[] decodedBytes = Base64.getDecoder().decode(id);
+			model.addAttribute("rshid", new String(decodedBytes));
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintakuUpload", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@Autowired
+	ServletContext context;
+
+	private String getNameFile(Object nameFile) {
+		String[] nama;
+		if (nameFile != null && nameFile != "") {
+			nama = nameFile.toString().split("/");
+			return nama[nama.length - 1].toString();
+		} else {
+			return "";
+		}
+
+	}
+
+	@RequestMapping(value = "/file/{id}/{type}", method = RequestMethod.POST)
+	public @ResponseBody String crunchifySave(@PathVariable("id") String id, @PathVariable("type") String typ,
+			@ModelAttribute("uploadForm") UploadTest uploadForm, Model map, HttpServletRequest req,
+
+			HttpSession session) throws IllegalStateException, IOException {
+		token.regenToken(session);
+		List<MultipartFile> crunchifyFiles = uploadForm.getFiles();
+		String nik = req.getParameter("nik");
+		JSONObject jsonCustInfo = new JSONObject(new RestServiceUnirest().requestPost(
+				this.API_SERVER + "/kinicintaku/ttable", session.getAttribute("accesskey").toString(),
+				new JSONObject().put("rsh_id", Integer.parseInt(id)).toString()));
+		JSONArray jArCustInfo = jsonCustInfo.getJSONArray("data");
+
+		String c_ipb_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_ipb_img"));
+		String c_pk_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_pk_img"));
+
+		JSONObject jIPB = new JSONObject();
+		JSONObject jPB = new JSONObject();
+
+		// String path = context.getRealPath("/WEB-INF/uploaded/spb/");
+		String path = con.getConfigValue("CustomPathSuratPernyataanUpload");// context.getRealPath("/WEB-INF/uploaded/spb/");
+		DateFormat df = new SimpleDateFormat("ddMMyyyy_HHmmss");
+		String date = df.format(new Date());
+		int x = 0;
+		if (null != crunchifyFiles && crunchifyFiles.size() > 0) {
+			for (MultipartFile multipartFile : crunchifyFiles) {
+				String type = multipartFile.getContentType();
+
+				if (typ.equalsIgnoreCase("ipb")) {
+					if (type.equalsIgnoreCase("image/jpeg") || type.equalsIgnoreCase("application/pdf")
+							|| type.equalsIgnoreCase("image/png")) {
+
+						String fileName = id + "_ipb_" + date + "_" + multipartFile.getOriginalFilename();
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							if (!file.exists()) {
+								//
+								/*
+								 * String path_http = this.LOCAL_SERVER + req.getContextPath() +
+								 * "/resourcesimage/uploaded/spb/";
+								 */
+								String path_http = con.getConfigValue("URL_ACCESS_IMG")
+										+ con.getConfigValue("PATERN_URL_SP_TTD");
+								try {
+									multipartFile.transferTo(file);
+
+									file.setReadable(true, false);
+									file.setExecutable(true, false);
+									file.setWritable(true, false);
+
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("c_ipb_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										jIPB.put("msg", "File IPB (Instruksi Penyerahan Barang) successfully uploaded");
+										jIPB.put("stat", true);
+										File files = new File(path + c_ipb_img);
+										files.delete();
+
+									} else {
+										jIPB.put("msg", "File IPB (Instruksi Penyerahan Barang) failed to upload");
+										jIPB.put("stat", false);
+										file.delete();
+									}
+
+								} catch (Exception e) {
+									jIPB.put("msg", e.getMessage());
+									jIPB.put("stat", false);
+
+									file.delete();
+								}
+
+							} else {
+								jIPB.put("msg",
+										"Failed to upload file IPB (Instruksi Penyerahan Barang), file is already exist on the server");
+								jIPB.put("stat", false);
+
+							}
+
+						} else {
+							jIPB.put("msg",
+									"Type of file IPB (Instruksi Penyerahan Barang) is not allowed ( files allowed : JPG/JPEG, PNG, PDF)");
+							jIPB.put("stat", false);
+
+						}
+					} else {
+						jIPB.put("msg",
+								"Type of file IPB (Instruksi Penyerahan Barang) is not allowed ( files allowed : JPG/JPEG, PNG, PDF)");
+						jIPB.put("stat", false);
+					}
+				} else if (typ.equalsIgnoreCase("sp")) {
+					if (type.equalsIgnoreCase("image/jpeg") || type.equalsIgnoreCase("application/pdf")
+							|| type.equalsIgnoreCase("image/png")) {
+
+						String fileName = id + "_pb_" + date + "_" + multipartFile.getOriginalFilename();
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+
+							if (!file.exists()) {
+								//
+								/*
+								 * String path_http = this.LOCAL_SERVER + req.getContextPath() +
+								 * "/resourcesimage/uploaded/spb/";
+								 */
+								String path_http = con.getConfigValue("URL_ACCESS_IMG")
+										+ con.getConfigValue("PATERN_URL_SP_TTD");
+								;
+								try {
+									multipartFile.transferTo(file);
+									file.setReadable(true, false);
+									file.setExecutable(true, false);
+									file.setWritable(true, false);
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("c_pk_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										File fileLama = new File(path + c_pk_img);
+										JSONObject jsonC = new JSONObject(new RestServiceUnirest()
+												.requestPost(this.API_CUSTOMER + "/gallery/insGallery",
+														session.getAttribute("accesskey").toString(),
+														new JSONObject().put("cga_nik", nik)
+																.put("cga_filename", fileName)
+																.put("cga_path", path_http).toString()));
+										if (jsonC.getString("status").equals("Success")) {
+											jPB.put("msg", "File successfully uploaded");
+											jPB.put("stat", true);
+											fileLama.delete();
+
+										} else {
+											jPB.put("msg", "Failed to upload, please contact administrator");
+											jPB.put("stat", false);
+											file.delete();
+										}
+
+									} else {
+
+										jPB.put("msg", "Failed to upload, please contact administrator");
+										jPB.put("stat", false);
+
+										file.delete();
+									}
+
+								} catch (Exception e) {
+
+									jPB.put("msg", "Internal Server Error");
+									jPB.put("stat", false);
+
+									file.delete();
+								}
+
+							} else {
+								jPB.put("msg", "Failed to upload, file is already exist on the server");
+								jPB.put("stat", false);
+
+							}
+
+						} else {
+							jPB.put("msg", "Type of file is not allowed (files allowed : JPG/JPEG, PNG, PDF)");
+							jPB.put("stat", false);
+
+						}
+					} else {
+						jPB.put("msg", "Type of file is not allowed (files allowed : JPG/JPEG, PNG, PDF)");
+						jPB.put("stat", false);
+					}
+				}
+
+				x++;
+			}
+		}
+
+		return new JSONObject().put("IPBStatus", jIPB).put("PBStatus", jPB).toString();
+	}
+
+}

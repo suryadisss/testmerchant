@@ -1,0 +1,1063 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+	pageEncoding="ISO-8859-1"%>
+<%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+
+<jsp:include page='_Header_Gentellela.jsp'>
+	<jsp:param name="title" value="Kini Cintaku" />
+	<jsp:param name="datatables" value="1" />
+	<jsp:param name="jqueryconfirm" value="1" />
+	<jsp:param name="jquerydatepicker" value="1" />
+	<jsp:param name="noityjs" value="1" />
+</jsp:include>
+
+<body class="nav-md">
+	<div class="container body">
+		<div class="main_container">
+
+			<jsp:include page='_Side_Navigation.jsp' />
+			<jsp:include page='_Top_Navigation.jsp' />
+
+
+			<div class="modal fade" id="myModal2" tabindex="-1" role="dialog"
+				style="z-index: 10000" aria-labelledby="myModalLabel">
+				<div class="modal-dialog modal-sm" role="document">
+					<div class="modal-content">
+						<form id="formInput15" action="">
+							<div class="modal-header">
+
+								<button type="button" class="close" data-dismiss="modal"
+									aria-label="Close">
+									<span aria-hidden="true">&times;</span>
+								</button>
+								<h4 class="modal-title" id="myModalLabel">Decline</h4>
+							</div>
+							<div class="modal-body">
+								<div class="row">
+									<div class="col-sm-12">
+										<div class="form-group">
+											<label for="email">Notes</label>
+											<textarea id="notes" name="notes" rows="5" required cols="30"
+												class="form-control"></textarea>
+										</div>
+									</div>
+								</div>
+								<!-- /.row -->
+							</div>
+							<div class="modal-footer">
+								<button class="btn btn-default" data-dismiss="modal">Cancel</button>
+								<button type="submit" id="cancel" class="btn btn-danger">Decline</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+
+
+
+
+
+			<div class="right_col" role="main">
+				<div class="row">
+					<div class="col-xs-12 col-sm-12 col-lg-12">
+						<div class="x_panel">
+							<div class="x_title">
+								<h2 id="judul"></h2>
+								<input type="hidden" id="hidProd">
+								<div class="clearfix"></div>
+							</div>
+							<div class="x_content">
+								<div>
+
+									<table class="table" width="100%" style="margin-top: 10px;">
+										<tbody>
+											<tr>
+												<td><h4 style="font-weight: bold;">Informasi
+														Nasabah</h4></td>
+											</tr>
+											<tr>
+												<td>
+													<table width="100%" border="0" class="">
+														<tbody>
+															<tr>
+																<td width="70%" valign="top">
+																	<table width="100%" border="0" class="">
+																		<tbody>
+																			<tr>
+																				<td width="70%" valign="top">
+																					<table width="100%" style="font-size: 16px;">
+																						<tr>
+																							<td>Nama Lengkap</td>
+																							<td>:</td>
+																							<td><span id="cst_fname"></span>&nbsp;<span
+																								id="cst_lname"></span></td>
+																						</tr>
+																						<tr>
+																							<td>No. KTP</td>
+																							<td>:</td>
+																							<td><span id="cst_ktp"></span></td>
+																						</tr>
+																						<tr>
+																							<td>Tanggal Lahir</td>
+																							<td>:</td>
+																							<td><span id="cst_dob"></span></td>
+																						</tr>
+																						<tr>
+																							<td>E-mail</td>
+																							<td>:</td>
+																							<td><span id="cst_email"></span></td>
+																						</tr>
+																						<tr class="sepa">
+																							<td valign="top">Alamat KTP</td>
+																							<td valign="top">:</td>
+																							<td valign="top"><div
+																									style="padding: 5px; margin-bottom: 20px; border: 1px dashed #bdbebf; background-color: #eff0f2; border-radius: 0.5em;">
+																									<span id="cst_address_ktp"></span><br>Kec.<span
+																										id="cst_districts_ktp"></span>,&nbsp;<span
+																										id="cst_municipality_ktp"></span>,&nbsp;<span
+																										id="cst_province_ktp"></span>&nbsp;<span
+																										id="cst_address_ktp_zipcode"></span>
+																								</div></td>
+																						</tr>
+																						<tr>
+																							<td valign="top">Alamat <span class="sepa">Domisili</span></td>
+																							<td valign="top">:</td>
+																							<td valign="top"><div
+																									style="padding: 5px; margin-bottom: 20px; border: 1px dashed #bdbebf; background-color: #eff0f2; border-radius: 0.5em;">
+																									<span id="cst_address"></span><br> <span
+																										class="sepa">Kec.</span><span
+																										id="cst_districts"></span> <span class="sepa">,</span>&nbsp;<span
+																										id="cst_municipality"></span> <span
+																										class="sepa">,</span>&nbsp;<span
+																										id="cst_province"></span> <span class="sepa">,</span>&nbsp;<span
+																										id="cst_address_zipcode"></span>
+																								</div></td>
+																						</tr>
+																					</table>
+
+
+
+																				</td>
+																				<!-- <td width="30%" id="c_pic_img"></td> -->
+																			</tr>
+
+																		</tbody>
+																	</table>
+
+
+
+																</td>
+																<!-- <td width="30%" id="c_pic_img"></td> -->
+															</tr>
+
+														</tbody>
+													</table>
+
+
+												</td>
+
+											</tr>
+
+											<tr>
+												<td><h4 style="font-weight: bold;">Produk Yang
+														Dibeli</h4></td>
+
+
+											</tr>
+											<tr>
+												<td><table id="tblDetail" width="100%"
+														class="table table-bordered" style="margin-top: 20px;">
+														<thead>
+															<tr class="">
+																<td width="40%"><b>Kategori</b></td>
+																<td width="40%"><b>Produk</b></td>
+																<td width="30%"><b>Harga</b></td>
+															</tr>
+														</thead>
+														<tbody id="tblDetailBody">
+															<tr>
+																<td><span id="category1"></span></td>
+																<td><span id="product1"></span></td>
+																<td>Rp. <span id="amount1"></span></td>
+															</tr>
+														</tbody>
+														<tfoot>
+															<tr>
+																<td colspan="2">Total</td>
+																<td>Rp. <span id="spnTotal"></span></td>
+															</tr>
+														</tfoot>
+													</table></td>
+											</tr>
+
+											<tr>
+												<td><h4 style="font-weight: bold;">Informasi Toko</h4></td>
+
+
+											</tr>
+											<tr>
+												<td><table width="100%" border="0"">
+														<tbody>
+															<tr>
+																<td width="30%"><b>Nama Toko</b></td>
+																<td width="70%"><span id="branch_name"></span></td>
+															</tr>
+															<tr>
+																<td width="30%"><b>Alamat</b></td>
+																<td width="70%"><span id="branch_address"></span></td>
+															</tr>
+															<tr>
+																<td width="30%"><b>Customer Service</b></td>
+																<td width="70%"><span id="referral_id"></span></td>
+															</tr>
+														</tbody>
+													</table></td>
+											</tr>
+										</tbody>
+									</table>
+
+
+
+
+									<br />
+									<form id="formInput3" method="post" action="product/dopost"
+										style="background: #fff6b7; padding: 19px; border: 1px dashed #bcae4f; border-radius: 0.5em;"
+										class="form-horizontal">
+										<input type="hidden" name="new_edit_status"
+											id="new_edit_status"> <input type="hidden" id="nik"
+											name="nik" />
+										<div class="form-group">
+											<label for="exampleInputEmail1">No. Reciept </label> <input
+												type="text" class="form-control" id="reciept" name="reciept"
+												required />
+										</div>
+										<div class="form-group">
+											<label for="exampleInputEmail1"><i id="icSP"></i>
+												Unggah Reciept<span id="statSp"></span> </label> <input
+												type="file" name="files[0]"
+												accept="image/png, image/jpeg, application/pdf" id="file"
+												required class="form-control">
+										</div>
+
+										<div class="form-group">
+											<button type="submit" id="submit2"
+												class="btn btn-primary pull-rigth">
+												<i class=" fa fa-cloud-upload "></i> Unggah
+											</button>
+											<span id="btnDownload2"></span>
+										</div>
+
+
+									</form>
+
+
+								</div>
+
+								<form id="formSummary" class="pull-right"
+									style="margin-top: 30px;">
+									<input type="hidden" id="ipb" name="ipb"> <input
+										type="hidden" id="sp" name="sp">
+									<button type="button" id="btnCancel"
+										class="btn btn-danger btn-lg">Decline</button>
+									<button type="submit" id="btnSave"
+										class="btn btn-primary pull-rigth">Approved</button>
+
+								</form>
+
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+
+<jsp:include page='_Footer_Gentellela.jsp'>
+	<jsp:param name="title" value="Disbursement" />
+	<jsp:param name="datatables" value="1" />
+	<jsp:param name="jqueryconfirm" value="1" />
+	<jsp:param name="jquerydatepicker" value="1" />
+	<jsp:param name="noityjs" value="1" />
+</jsp:include>
+<script type="text/javascript">
+	function validate_status(stat) {
+	/* 	if (stat != "CashierApproved") {
+			alert("Informasi yang ditampilkan salah, mohon ulangi kembali");
+			window.location.href = "${local_server}/lmsadmin/KiniCintaku";
+		} */
+	}
+</script>
+<script type="text/javascript">
+	$(document)
+			.ready(
+					function() {
+						$(document).ready(function() {
+							getTempTable();
+							//getCustomerInfo();
+						});
+
+						$(document).on('click', '[data-toggle="lightbox"]',
+								function(event) {
+									event.preventDefault();
+									$(this).ekkoLightbox();
+								});
+
+						$("#formInput2")
+								.submit(
+										function(e) {
+											var ipb = $("#ipb").val();
+
+											$
+													.ajax({
+														url : '${local_server}/Cashier/file/${rshid}/ipb',
+														type : 'POST',
+														data : new FormData(
+																this),
+														processData : false,
+														contentType : false,
+														cache : false,
+														beforeSend : function() {
+															$("#submit1")
+																	.html(
+																			'<i class="fa fa-spin fa-circle-o-notch "></i> Uploading ..')
+																	.prop(
+																			"disabled",
+																			true);
+														},
+
+														success : function(data) {
+															$("#submit1")
+																	.html(
+																			'<i class="fa fa-cloud-upload "></i> Unggah')
+																	.prop(
+																			"disabled",
+																			false);
+															$("#formInput2")[0]
+																	.reset();
+															var res = $
+																	.parseJSON(data);
+															var x = 0;
+															var col = ""
+															if (res.IPBStatus.stat) {
+																col += '<br> <i class="green fa fa-check-square" aria-hidden="true"></i>'
+																		+ res.IPBStatus.msg;
+																$("#ipb").val(
+																		true);
+																$("#icIPB")
+																		.addClass(
+																				"green fa fa-check-square");
+																$
+																		.confirm({
+																			title : '',
+																			content : col,
+																			typeAnimated : true,
+																			buttons : {
+																				tryAgain : {
+																					text : 'OK',
+																					action : function() {
+																						getTempTable();
+																					}
+																				}
+																			}
+																		});
+															} else {
+																$
+																		.alert(res.IPBStatus.msg);
+															}
+
+														}
+													});
+											e.preventDefault();
+										});
+						$("#formInput3")
+								.submit(
+										function(e) {
+											$
+													.ajax({
+														url : '${local_server}/Cashier/file/${rshid}/sp',
+														type : 'POST',
+														data : new FormData(
+																this),
+														processData : false,
+														contentType : false,
+														cache : false,
+														beforeSend : function() {
+															$("#submit2")
+																	.html(
+																			'<i class="fa fa-spin fa-circle-o-notch "></i> Mengunggah ..')
+																	.prop(
+																			"disabled",
+																			true);
+														},
+
+														success : function(data) {
+															$("#submit2")
+																	.html(
+																			'<i class="fa fa-cloud-upload "></i> Unggah')
+																	.prop(
+																			"disabled",
+																			false);
+
+															$("#formInput3")[0]
+																	.reset();
+															var res = $
+																	.parseJSON(data);
+															var x = 0;
+															var col = ""
+															if (res.PBStatus.stat) {
+																col += '<br> <i class="green fa fa-check-square" aria-hidden="true"></i>'
+																		+ res.PBStatus.msg;
+																$("#sp").val(
+																		true);
+																$("#icSp")
+																		.addClass(
+																				"green fa fa-check-square");
+																$
+																		.confirm({
+																			title : '',
+																			content : col,
+																			typeAnimated : true,
+																			buttons : {
+																				tryAgain : {
+																					text : 'OK',
+																					action : function() {
+																						getTempTable();
+																					}
+																				}
+																			}
+																		});
+															} else {
+																$
+																		.alert(res.PBStatus.msg);
+															}
+
+														}
+													});
+											e.preventDefault();
+										});
+
+						/* $("#formInput3").submit(function(e) {
+							$.ajax({
+								url : '${local_server}/print_doc/file/${id}/spb',
+								type : 'POST',
+								data : new FormData(this),
+								processData : false,
+								contentType : false,
+								cache : false,
+								success : function(data) {
+									$("#formInput3")[0].reset();
+									$.alert(data);
+
+								}
+							});
+							e.preventDefault();
+						}); */
+
+					});
+	function getFileName(val) {
+		if (val != null && val != "") {
+			var fn = val.split("/");
+			return fn[fn.length - 1];
+		} else {
+			return "";
+		}
+	}
+
+	function getTempTable() {
+		$
+				.ajax({
+					type : 'GET',
+					asyn : true,
+					url : '${local_server}/KiniCintaku/gettemptable/${rshid}',
+					dataType : "json",
+					beforeSend : function() {
+						showLoadingProg(true, "Loading Customer Data ");
+					},
+
+					success : function(data) {
+						console.log(data);
+						showLoadingProg(false, "");
+						if (data.status == "Success") {
+							validate_status(data.data[0].decision);
+
+							if (data.status == "Success") {
+
+								$('#hidProd').val(data.data[0].product_code);
+								if (data.data[0].product_code.substr(0, 3) == "A01") {
+									$('#judul')
+											.html(
+													"KiniCintaku - Unggah Receipt");
+								} else {
+									$('#judul')
+											.html(
+													"Kini Usaha - Unggah Receipt");
+								}
+
+								var tot_pem = data.data[0].r_purpose
+										+ data.data[0].dp_paid;
+								var jumCil = parseInt(data.data[0].r_installment)
+										+ parseInt(data.data[0].cost_monthly_value);
+								$('#tot_pembelian').html(toRp(tot_pem));
+								$('#JumCilBln').html(toRp(jumCil));
+								$('#ktp_img').attr('href',
+										data.data[0].c_ktp_img);
+								$('#other_img').attr('href',
+										data.data[0].c_other_img);
+								$('#pic_img').attr('href',
+										data.data[0].c_pic_img);
+								/* $('#pk_img').attr('href',data.data[0].c_pk_img); */
+
+								if (data.data[0].cst_address_ktp == null) {
+									$(".sepa").empty();
+								}
+								$
+										.each(
+												data.data[0],
+												function(i, o) {
+													var TagHtml = "#" + i;
+													if (checkExists(String(TagHtml))) {
+														o = (i == "cst_employment_date") ? convertDateAPI(o)
+																: o;
+														o = (i == "cst_dob") ? convertDateAPI(o)
+																: o;
+														o = (i == "dp_paid") ? toRp(o)
+																: o;
+														if (i == "cst_sex") {
+															o = (o == "M") ? "Laki - Laki"
+																	: "Perempuan";
+														}
+														o = (i == "cst_salary_level") ? toRp(o)
+																: o;
+														o = (i == "other_income") ? toRp(o)
+																: o;
+														o = (i == "cost_onetime_value") ? toRp(o)
+																: o;
+														o = (i == "cost_monthly_value") ? toRp(o)
+																: o;
+														o = (i == "r_installment") ? toRp(o)
+																: o;
+														o = (i == "r_purpose") ? toRp(o)
+																: o;
+
+														$(String(TagHtml))
+																.html(o);
+													}
+												});
+								getProductList(data.data[0].booking_code,
+										data.data[0].branch_code);
+							}
+
+							if (data.hasOwnProperty("data3")) {
+								if (data.data3.length > 0) {
+									var html = '<div class="alert alert-warning">';
+
+									html += '<strong><i class="fa fa-pencil-square-o "></i> Chasier '
+											+ data.data3[0].rsr_cashier_id
+											+ ' notes :</strong><br> ';
+
+									html += '<i>' + data.data3[0].rsr_notes
+											+ '</i>';
+
+									html += "</div>";
+									$("#note").html(html);
+
+								}
+							}
+							if (data.hasOwnProperty("data")) {
+								if (Object.keys(data.data).length > 0) {
+
+									if (data.data[0].hasOwnProperty("cst_nik")
+											&& data.data[0].cst_nik != null
+											&& data.data[0].cst_nik != "") {
+										if (data.data[0].cst_nik != "Public") {
+											$("#nik").val(data.data[0].cst_nik);
+
+										} else {
+											if (data.data[0]
+													.hasOwnProperty("cst_cif")
+													&& data.data[0].cst_cif != null
+													&& data.data[0].cst_cif != "") {
+												$("#nik").val(
+														data.data[0].cst_cif);
+
+											}
+										}
+
+									}
+									
+									if(data.data[0].hasOwnProperty("ads_field_27")
+											&& data.data[0].ads_field_27 != null
+											&& data.data[0].ads_field_27 != ""){
+										$("#reciept").val(data.data[0].ads_field_27);
+										$("#reciept").prop("readonly",true);
+									}
+
+									if (data.data[0].hasOwnProperty("c_pk_img")
+											&& data.data[0].c_pk_img != null
+											&& data.data[0].c_pk_img != "") {
+										$("#sp").val(true);
+										$("#icSP").addClass(
+												"green fa fa-check-square");
+										$("#statSp")
+												.html(
+														" (Sudah Terpenuhi) <br> File name : "
+																+ getFileName(data.data[0].c_pk_img));
+
+										$("#btnDownload2")
+												.html(
+														'<a href="'+data.data[0].c_pk_img+'" target="_blank" class="btn btn-info"><i class=" fa fa-cloud-download "></i> Unduh</a>');
+
+									}
+								}
+
+							}
+
+						}
+					}
+				});
+	}
+
+	function getCustomerInfo() {
+		$
+				.ajax({
+					type : 'POST',
+					asyn : true,
+					url : '${local_server}/Cashier/getcustinfo',
+					data : "id=${rshid}",
+
+					beforeSend : function() {
+						showLoadingProg(true, "Loading Customer Data ");
+					},
+					success : function(data) {
+						showLoadingProg(false, "");
+						console.log("Customer Info");
+						console.log(data);
+						if (data.status == "Success") {
+
+							$('#hidProd').val(data.data[0].product_code);
+							if (data.data[0].product_code.substr(0, 3) == "A01") {
+								$('#judul')
+										.html(
+												"KiniCintaku - Unggah Surat Pernyataan");
+							} else {
+								$('#judul').html(
+										"Kini Usaha - Unggah Surat Pernyataan");
+							}
+
+							var tot_pem = data.data[0].r_purpose
+									+ data.data[0].dp_paid;
+							var jumCil = parseInt(data.data[0].r_installment)
+									+ parseInt(data.data[0].cost_monthly_value);
+							$('#tot_pembelian').html(toRp(tot_pem));
+							$('#JumCilBln').html(toRp(jumCil));
+							$('#ktp_img').attr('href', data.data[0].c_ktp_img);
+							$('#other_img').attr('href',
+									data.data[0].c_other_img);
+							$('#pic_img').attr('href', data.data[0].c_pic_img);
+							/* $('#pk_img').attr('href',data.data[0].c_pk_img); */
+
+							if (data.data[0].cst_address_ktp == null) {
+								$(".sepa").empty();
+							}
+							$
+									.each(
+											data.data[0],
+											function(i, o) {
+												var TagHtml = "#" + i;
+												if (checkExists(String(TagHtml))) {
+													o = (i == "cst_employment_date") ? convertDateAPI(o)
+															: o;
+													o = (i == "cst_dob") ? convertDateAPI(o)
+															: o;
+													o = (i == "dp_paid") ? toRp(o)
+															: o;
+													if (i == "cst_sex") {
+														o = (o == "M") ? "Laki - Laki"
+																: "Perempuan";
+													}
+													o = (i == "cst_salary_level") ? toRp(o)
+															: o;
+													o = (i == "other_income") ? toRp(o)
+															: o;
+													o = (i == "cost_onetime_value") ? toRp(o)
+															: o;
+													o = (i == "cost_monthly_value") ? toRp(o)
+															: o;
+													o = (i == "r_installment") ? toRp(o)
+															: o;
+													o = (i == "r_purpose") ? toRp(o)
+															: o;
+
+													$(String(TagHtml)).html(o);
+												}
+											});
+							getProductList(data.data[0].booking_code,
+									data.data[0].branch_code);
+						}
+
+					},
+					failure : function(errMsg) {
+						alert("call failed");
+					}
+				});
+	}
+
+	function getProductList(code, branch) {
+		var arr = {};
+		arr["booking_code"] = code;
+		arr["branch_code"] = branch;
+		var url = '${local_server}/KiniCintaku/GetProductByBO/';
+		$.ajax({
+			type : "POST",
+			url : url,
+			data : arr,
+			cache : false,
+			success : function(data) {
+				if (data.status == "Success") {
+
+					showProductList(data.data.detail);
+
+				}
+
+			},
+			failure : function(errMsg) {
+				alert("call failed");
+			}
+		});
+	}
+
+	$("#formInput15")
+			.submit(
+					function(e) {
+
+						var arr = {};
+						arr['rsh_id'] = '${rshid}';
+						arr['notes'] = $('#notes').val();
+						if (arr['notes'] != null && arr['notes'] != "") {
+							var url = '${local_server}/Cashier/Decline';
+							console.log(arr);
+							$
+									.ajax({
+										type : "POST",
+										url : url,
+										data : arr,
+										cache : false,
+										beforeSend : function() {
+											$("#btnCancel")
+													.html(
+															"<i class='fa fa-circle-o-notch fa-spin'></i>  Processing ..");
+
+											$("#btnSave").addClass("disabled");
+											$("#btnCancel")
+													.addClass("disabled");
+
+										},
+										complete : function(xhr, status) {
+											if (status === 'error'
+													|| !xhr.responseText) {
+												console.log(status);
+											} else {
+												$("#btnCancel").html("Cancel");
+
+												$("#btnSave").removeClass(
+														"disabled");
+												$("#btnCancel").removeClass(
+														"disabled");
+												var data = xhr.responseText;
+												$
+														.confirm({
+															title : "Success",
+															content : "Decline Berhasil.",
+															buttons : {
+																somethingElse : {
+																	text : 'OK',
+																	btnClass : 'btn-success',
+																	keys : [ 'enter' ],
+																	action : function() {
+																		var prod = $(
+																				'#hidProd')
+																				.val();
+																		if (prod
+																				.substr(
+																						0,
+																						3) == "A01") {
+																			window.location.href = "${local_server}/KiniCintaku";
+																		} else {
+																			window.location.href = "${local_server}/KiniUsaha";
+																		}
+
+																	}
+																}
+
+															}
+														});
+											}
+										}
+
+									});
+						} else {
+							$
+									.alert("Please input a note to decline this submission");
+						}
+
+						return false;
+
+					});
+
+	$("#formSummary")
+			.submit(
+					function(e) {
+						var url = '${local_server}/Cashier/saveSummary2/${rshid}';
+
+						var sp = $('#sp').val();
+
+						if (sp == "true") {
+							$
+									.confirm({
+										title : 'Konfirmasi',
+										content : 'Apakah anda ingin melanjutkan ?',
+										buttons : {
+											batal : function() {
+												$.alert('Canceled!');
+											},
+											somethingElse : {
+												text : 'Lanjutkan',
+												btnClass : 'btn-success',
+												keys : [ 'enter', 'shift' ],
+												action : function() {
+													$
+															.ajax({
+																type : "POST",
+																url : url,
+																data : $(
+																		"#formSummary")
+																		.serialize(),
+																cache : false,
+
+																beforeSend : function() {
+																	$(
+																			"#btnSave")
+																			.html(
+																					"<i class='fa fa-circle-o-notch fa-spin'></i>  Processing ..");
+
+																	$(
+																			"#btnSave")
+																			.addClass(
+																					"disabled");
+																	$(
+																			"#btnCancel")
+																			.addClass(
+																					"disabled");
+																	$(
+																			'button[type=submit]')
+																			.prop(
+																					'disabled',
+																					true);
+
+																},
+																complete : function(
+																		xhr,
+																		status) {
+																	if (status === 'error'
+																			|| !xhr.responseText) {
+																		console
+																				.log(xhr);
+																	} else {
+																		$(
+																				'button[type=submit]')
+																				.prop(
+																						'disabled',
+																						false);
+																		$(
+																				"#btnSave")
+																				.html(
+																						"Approved");
+
+																		$(
+																				"#btnSave")
+																				.removeClass(
+																						"disabled");
+																		$(
+																				"#btnCancel")
+																				.removeClass(
+																						"disabled");
+																		console
+																				.log(xhr.responseText);
+
+																		var data = xhr.responseText;
+																		console
+																				.log(data);
+																		$
+																				.confirm({
+																					title : "Success",
+																					content : "Summary Berhasil Disimpan",
+																					buttons : {
+																						somethingElse : {
+																							text : 'OK',
+																							btnClass : 'btn-success',
+																							keys : [ 'enter' ],
+																							action : function() {
+																								var prod = $(
+																										'#hidProd')
+																										.val();
+																								if (prod
+																										.substr(
+																												0,
+																												3) == "A01") {
+																									window.location.href = "${local_server}/KiniCintaku";
+																								} else {
+																									window.location.href = "${local_server}/KiniUsaha";
+																								}
+
+																							}
+																						}
+
+																					}
+																				});
+																	}
+																}
+															});
+
+												}
+											}
+										}
+									});
+						} else {
+							$
+									.alert('Pastikan dokumen yang diupload sudah lengkap.');
+						}
+
+						e.preventDefault();
+						return false;
+					});
+
+	function showProductList(obj) {
+		var tot = 0;
+		$.each(obj, function(i, o) {
+			var num = i + 1;
+
+			var x = $("#tblDetail > tbody > tr").length;
+			x++;
+			var z = "";
+			if (num == 1) {
+				$("#category" + num).html(o.category);
+				//getJenis(num,o.category,o.item);		
+				$("#product" + num).html(o.item);
+				$("#amount" + num).html(toRp(o.amount));
+			}
+			if (x == num) {
+				var html = generateFormtbl(x);
+				$("#tblDetailBody").append(html);
+				$("#category" + num).html(o.category);
+				//getJenis(num,o.category,o.item);
+				$("#product" + num).html(o.item);
+				$("#amount" + num).html(toRp(o.amount));
+			}
+
+			tot += o.amount;
+		});
+		$("#spnTotal").html(toRp(tot));
+		return false;
+	}
+
+	function toRp(angka) {
+		if (angka == "null") {
+			return "-";
+		}
+
+		var rev = parseInt(angka, 10).toString().split('').reverse().join('');
+		var rev2 = '';
+		for (var i = 0; i < rev.length; i++) {
+			rev2 += rev[i];
+			if ((i + 1) % 3 === 0 && i !== (rev.length - 1)) {
+				rev2 += ',';
+			}
+		}
+		return '' + rev2.split('').reverse().join('') + '';
+
+	}
+
+	function generateFormtbl(x) {
+		var html = '<tr>';
+		html += '<td><span id="category'+x+'"></span></td>';
+		html += '<td><span id="product'+x+'"></span></td>';
+		html += '<td>Rp. <span id="amount'+x+'"></span></td>';
+		html += '</tr>';
+		return html;
+	}
+
+	function getJenis(num, cat, itm) {
+		//var cat = $("#category"+num).val();
+		$.ajax({
+			type : 'GET',
+			asyn : true,
+			url : '${local_server}/KiniCintaku/getDDLItemByCategory/' + cat,
+			success : function(data) {
+				if (data.status == "Success") {
+
+					$.each(data.data, function(i, o) {
+						if (o.itemcode == itm) {
+							$("#product" + num).html(o.itemname);
+						}
+					});
+				}
+
+			},
+			failure : function(errMsg) {
+				alert("call failed");
+			}
+		});
+		return false;
+	}
+
+	function checkExists(sel) {
+		var status = false;
+		if ($(sel).length)
+			status = true;
+		return status;
+	}
+
+	function convertDateAPI(val) {
+		date = new Date(val);
+		month = date.getMonth() + 1;
+		year = date.getFullYear();
+		tgl = date.getDate();
+		j = date.getHours();
+		m = date.getMinutes();
+		d = date.getSeconds();
+
+		if (tgl < 10) {
+			tgl = '0' + tgl;
+		}
+		if (month < 10) {
+			month = '0' + month;
+		}
+
+		return year + '-' + month + '-' + tgl;
+	}
+
+	$("#btnCancel").click(function() {
+		$("#myModal2").modal("show");
+		$('#formInput3')[0].reset();
+	});
+
+	function censored(val) {
+		var x = "";
+		if (val != null != "") {
+			var y = (val.length > 10) ? 5 : 2;
+			var s = (val.length > 10) ? val.length - 2 : val.length - 1;
+			x += val.substr(0, y);
+			for (var j = y; j < s; j++) {
+				x += "*";
+			}
+			x += val.substr(s);
+
+		}
+		return x;
+	}
+	
+	
+	
+	
+</script>

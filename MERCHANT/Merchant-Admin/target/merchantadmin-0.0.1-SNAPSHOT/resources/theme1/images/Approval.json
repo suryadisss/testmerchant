@@ -1,0 +1,28 @@
+{
+    "status": "Success",
+    "message": "Processed",
+    "data": [
+        {
+            "cst_cif": "0000000000132172",
+            "cst_fname": "IQBAL",
+            "cst_lname": "ZUHDI",
+            "cst_ktp": "3456673748783784",
+            "cst_dob": "1970-01-01T00:00:00",
+            "cst_address": "Jalan Jakarta",
+            "cst_address_zipcode": "12510",
+            "cst_phone_mobile": "087887003406",
+            "cst_pob": "MEKKAH",
+            "cst_address_ktp": "Jalan Jakarta Timur",
+            "cst_address_ktp_zipcode": "12561",
+            "cst_municipality": "Kota Adm. Jakarta Selatan",
+            "cst_npwp": "2324234",
+            "cst_province": "DKI JAKARTA",
+            "cst_province_ktp": "DKI JAKARTA",
+            "cst_municipality_ktp": "Kota Adm. Jakarta Selatan",
+            "cst_districts": "Jagakarsa",
+            "cst_districts_ktp": "Cilandak",
+            "cst_email": "hnnakardiana@gmail.com",
+            "cst_verification": false
+        }
+    ]
+}
