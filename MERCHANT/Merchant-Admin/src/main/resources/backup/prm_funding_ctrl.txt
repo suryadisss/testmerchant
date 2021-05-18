@@ -1,0 +1,183 @@
+package org.idx.lms.controllers;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import org.idx.lms.libs.ConfigApps;
+import org.idx.lms.libs.RestServiceUnirest;
+import org.idx.lms.libs.TokenRegen;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+@RequestMapping("parameter_funding")
+public class KiniDanakuParameterFundingController {
+	private ConfigApps con = new ConfigApps();
+	private String SESSION_ID = "";
+	private String API_SERVER_CUST = con.getConfigValue("ServerAPI-CUST");
+	private String API_SERVER_IPS = con.getConfigValue("ServerAPI-IPS");
+	private String LOCAL_SERVER = con.getConfigValue("ServerLocal");
+	private String PKD_ID = con.getConfigValue("PARAMETER_FUNDING_PKD_ID");
+	@Autowired
+	ServletContext context;
+
+	TokenRegen token = new TokenRegen();
+
+	private boolean checkSession(HttpSession session, String level) {
+		boolean bol = false;
+		if (session.getAttribute("accesskey") != null) {
+			JSONArray jMenu = new JSONArray(session.getAttribute("session_menu").toString());
+			for (int i = 0; i < jMenu.length(); i++) {
+				if (jMenu.getJSONObject(i).getString("ldlmdescription").equals(level)) {
+					bol = true;
+				}
+			}
+		}
+		return bol;
+	}
+
+	@RequestMapping(method = RequestMethod.GET)
+	public ModelAndView ParameterKiniDanaku(ModelMap model, HttpSession session, HttpServletRequest req) {
+		if (checkSession(session, "lvl_prm_funding")) {
+			token.regenToken(session);
+
+			model.addAttribute("pkd_id", this.PKD_ID);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("ParameterFundingMainView", model);
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/kdk_param_detail/{id}", method = RequestMethod.GET)
+	public @ResponseBody String kdk_param_detail(@PathVariable("id") String id, HttpSession session,
+			HttpServletRequest req) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER_IPS + "/v1.0/paramkinidanaku/detail/" + id,
+				session.getAttribute("accesskey").toString());
+	}
+
+	@RequestMapping(value = "/kdk_param_wallet/{id}", method = RequestMethod.GET)
+	public @ResponseBody String kdk_param_wallet(@PathVariable("id") String id, HttpSession session,
+			HttpServletRequest req) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER_IPS + "/v1.0/paramwallets/detail/" + id,
+				session.getAttribute("accesskey").toString());
+	}
+	
+	//
+	@RequestMapping(value = "/list_type", method = RequestMethod.GET)
+	public @ResponseBody String list_type(HttpSession session, HttpServletRequest req) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER_IPS + "/v1/paramkinidanaku/list/commision/type",
+				session.getAttribute("accesskey").toString());
+	}
+	
+	@RequestMapping(value = "/list_komisi/{id}", method = RequestMethod.GET)
+	public @ResponseBody String list_komisi(@PathVariable("id") String id, HttpSession session,
+			HttpServletRequest req) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER_IPS + "/v1/paramkinidanaku/list/" + id,
+				session.getAttribute("accesskey").toString());
+	}	
+	//
+	
+	JSONArray getData(HttpServletRequest req) {
+		JSONArray jRet = new JSONArray();
+
+		String[] pcs_type = req.getParameterValues("pcs_type");
+		String[] pcs_type_name = req.getParameterValues("pcs_type_name");
+		String[] pcs_invest = req.getParameterValues("pcs_invest");
+		String[] pcs_repay = req.getParameterValues("pcs_repay");
+		String[] pcs_late = req.getParameterValues("pcs_late");
+		String[] pcs_collect = req.getParameterValues("pcs_collect");
+
+		for (int n = 0; n < pcs_type.length; n++) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("type", pcs_type[n].toString());
+			jDetail.put("type_name", pcs_type_name[n].toString());
+			jDetail.put("invest", pcs_invest[n].toString());
+			jDetail.put("repay", pcs_repay[n].toString());
+			jDetail.put("late", pcs_late[n].toString());
+			jDetail.put("collect", pcs_collect[n].toString());
+			jRet.put(jDetail);
+		}
+		return jRet;
+	}	
+	
+	@RequestMapping(value = "/dopost", method = RequestMethod.POST)
+	public @ResponseBody String dopost(HttpSession session, HttpServletRequest req) {
+		token.regenToken(session);
+		String msg;
+		JSONObject jDataKDC = new JSONObject();
+		JSONObject RequestPOST, RequestPOST2;
+		jDataKDC.put("id", req.getParameter("pkd_id"));
+		jDataKDC.put("min_invest", req.getParameter("min_invest").replaceAll(",", ""));
+		jDataKDC.put("max_inv_pct", req.getParameter("max_inv_pct"));
+		jDataKDC.put("multiple_invest", req.getParameter("multiple_invest"));
+		jDataKDC.put("booking_valid", req.getParameter("booking_valid"));
+		jDataKDC.put("public_retail_com_pct", req.getParameter("public_retail_com_pct"));
+		jDataKDC.put("public_corp_com_pct", req.getParameter("public_corp_com_pct"));
+		jDataKDC.put("klg_com_pct", req.getParameter("klg_com_pct"));
+		jDataKDC.put("tax", req.getParameter("tax"));
+
+		jDataKDC.put("public_retail_late_pct", req.getParameter("public_retail_late_pct"));
+		jDataKDC.put("public_corp_late_pct", req.getParameter("public_corp_late_pct"));
+		jDataKDC.put("klg_late_pct", req.getParameter("klg_late_pct"));
+		jDataKDC.put("public_retail_collect_pct", req.getParameter("public_retail_collect_pct"));
+		jDataKDC.put("public_corp_collect_pct", req.getParameter("public_corp_collect_pct"));
+		jDataKDC.put("klg_collect_pct", req.getParameter("klg_collect_pct"));
+
+		jDataKDC.put("public_retail_repay_pct", req.getParameter("public_retail_repay_pct"));
+		jDataKDC.put("public_corp_repay_pct", req.getParameter("public_corp_repay_pct"));
+		jDataKDC.put("klg_repay_pct", req.getParameter("klg_repay_pct"));
+		jDataKDC.put("is_active", true);
+		jDataKDC.put("usr", session.getAttribute("session_id").toString());
+
+		jDataKDC.put("commision",getData(req));
+		
+		JSONObject jDataWallet = new JSONObject();
+
+		RequestPOST = new JSONObject(
+				new RestServiceUnirest().requestPost(this.API_SERVER_IPS + "/v1.0/paramkinidanaku/update",
+						session.getAttribute("accesskey").toString(), jDataKDC.toString()));
+
+		jDataWallet.put("pkd_id", req.getParameter("pkd_id"));
+		jDataWallet.put("min_topup", req.getParameter("min_topup").replaceAll(",", ""));
+		jDataWallet.put("cost_topup", req.getParameter("cost_topup").replaceAll(",", ""));
+		jDataWallet.put("validity", req.getParameter("validity"));
+		jDataWallet.put("min_withdraw", req.getParameter("min_withdraw").replaceAll(",", ""));
+		jDataWallet.put("cost_withdraw", req.getParameter("cost_withdraw").replaceAll(",", ""));
+		jDataWallet.put("est_withdraw", req.getParameter("est_withdraw"));
+		jDataWallet.put("usr", session.getAttribute("session_id").toString());
+
+		if (Integer.parseInt(req.getParameter("pwt_id")) != 0) {
+			RequestPOST2 = new JSONObject(
+					new RestServiceUnirest().requestPost(this.API_SERVER_IPS + "/v1.0/paramwallets/update",
+							session.getAttribute("accesskey").toString(), jDataWallet.toString()));
+
+		} else {
+			RequestPOST2 = new JSONObject(
+					new RestServiceUnirest().requestPost(this.API_SERVER_IPS + "/v1.0/paramwallets/insert",
+							session.getAttribute("accesskey").toString(), jDataWallet.toString()));
+
+		}
+
+		if (RequestPOST.getString("status").equals("Success") && RequestPOST2.getString("status").equals("Success")) {
+			msg = "{\"status\":\"Success\",\"msg\":\"Saved Successfully\" }";
+		} else {
+			msg = "{\"status\":\"Faile\",\"msg\":\"Failed to Save\" }";
+		}
+
+		return msg;
+	}
+}

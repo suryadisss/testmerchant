@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: %{DKI_SERVICE_NAME}
+  labels:
+    version: %{TAG}
+spec:
+  replicas: %{POD_REPLICA}
+  selector:
+    matchLabels:
+      app: %{DKI_SERVICE_NAME}
+  strategy:
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+    type: RollingUpdate
+  revisionHistoryLimit: 1
+  template:
+    metadata:
+      labels:
+        app: %{DKI_SERVICE_NAME}
+        version: %{TAG}
+    spec:
+      containers:
+      - name: %{DKI_SERVICE_NAME}
+        image: %{IMAGE_URL}:%{TAG}
+        resources:
+          requests:
+            memory: "%{REQ_MEMORY}"
+            cpu: "%{REQ_CPU}"
+          limits:
+            memory: "%{LIMIT_MEMORY}"
+            cpu: "%{LIMIT_CPU}"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: %{PORT}
+        securityContext:
+          privileged: true
+          capabilities:
+            add: ["SYS_ADMIN"]
+          allowPrivilegeEscalation: true
+        volumeMounts:
+          - name: baseconfig-ops
+            mountPath: "/opt/apache-tomcat-9.0.41/webapps/ROOT/WEB-INF/classes/config/BaseConfig.json"
+            subPath: "BaseConfig.json"
+          - name: img-volume
+            mountPropagation: "Bidirectional"
+            mountPath: "/var/public/danakini/images"
+          - name: videos-volume
+            mountPropagation: "Bidirectional"
+            mountPath: "/var/public/videos"
+          - name: log-volume
+            mountPropagation: "Bidirectional"
+            mountPath: "/opt/apache-tomcat-9.0.41/logs"
+      volumes:
+        - name: baseconfig-ops
+          configMap:
+            name: baseconfig-ops
+        - name: img-volume
+          hostPath:
+            path: /mnt/img/%{NAMESPACE_KUBE}
+            type: DirectoryOrCreate
+        - name: videos-volume
+          hostPath:
+            path: /mnt/videos/%{NAMESPACE_KUBE}
+            type: DirectoryOrCreate
+        - name: log-volume
+          hostPath:
+            path: /mnt/log/ops/%{NAMESPACE_KUBE}
+            type: DirectoryOrCreate
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
