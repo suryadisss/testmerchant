@@ -1,0 +1,1665 @@
+package org.idx.lms.controllers;
+
+import java.io.IOException;
+import java.nio.file.attribute.PosixFilePermission;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import org.apache.commons.io.IOUtils;
+import org.idx.lms.libs.ConfigApps;
+import org.idx.lms.libs.RestServiceUnirest;
+import org.idx.lms.libs.TokenRegen;
+import org.idx.lms.model.UploadTest;
+import org.idx.lms.model.kinicintaku.KiniCintakuItem;
+import org.idx.lms.model.kinicintaku.KiniCintakuRItem;
+import org.idx.lms.model.kinicintaku.ProductPurchaseItem;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.ui.ModelMap;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+@RequestMapping("KiniCintaku")
+public class KiniCintakuController {
+	private ConfigApps con = new ConfigApps();
+	private String SESSION_ID = "";
+	private String RSHID = "";
+	private String SERVER_PHP = con.getConfigValue("ServerPHP");
+	private String SERVER_IMG = con.getConfigValue("URL_ACCESS_IMG");
+	private String API_SERVER_CORE = con.getConfigValue("ServerAPI-CORE");
+	private String API_SERVER = con.getConfigValue("ServerAPI");
+	private String API_CUSTOMER = con.getConfigValue("ServerAPI-CUST");
+	private String API_LMS = con.getConfigValue("ServerAPI-LMS");
+	private String API_NOTIF = con.getConfigValue("ServerAPI-NOTIF");
+	private String LOCAL_SERVER = con.getConfigValue("ServerLocal");
+	private String ID_TOKEN = con.getConfigValue("ID-TOKEN");
+	private String PASS_TOKEN = con.getConfigValue("PASS-TOKEN");
+
+	@Autowired
+	ServletContext context;
+
+	TokenRegen token = new TokenRegen();
+
+	private boolean checkSession(HttpSession session, String level) {
+		boolean bol = false;
+		if (session.getAttribute("accesskey") != null) {
+			JSONArray jMenu = new JSONArray(session.getAttribute("session_menu").toString());
+			for (int i = 0; i < jMenu.length(); i++) {
+				if (jMenu.getJSONObject(i).getString("ldlmdescription").equals(level)) {
+					bol = true;
+				}
+			}
+		}
+		return bol;
+	}
+
+	@RequestMapping(method = RequestMethod.GET)
+	public ModelAndView dis_single(ModelMap model, HttpSession session, HttpServletRequest req) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintakuMainView", model);
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+
+	}
+
+	@RequestMapping(value = "/getKiniCintaku", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getKiniCintakuList(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/losdata/list",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject()
+				.put("userid", this.SESSION_ID)
+				.put("product_code", "A01")
+				.toString());
+
+	}
+
+	@RequestMapping(value = "/getDDLBisnis", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getDropdownListBisnis(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER + "/ddlen/kinicintakubisnis",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getJenisKelamin", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getJenisKelamin(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/Gender",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getEducation", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getEducation(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/EducationLevel",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getMaritalStatus", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getMaritalStatus(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/MaritalStatus",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getTypeOfWork", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getTypeOfWork(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/TypeOfWork",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getEmploymentType", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getEmploymentType(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/EmployementType",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getDDLInternalCode", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getDropdownListInternalCode(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_SERVER + "/ddlen/internalcode",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getDDLCategory", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getDropdownListCategory(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_LMS + "/Category/GetCategoryProduct/A01",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getDDLItemByCategory/{cat}", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String getDropdownListItemByCategory(@PathVariable("cat") String cat, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_LMS + "/Category/GetItemProductByCategory/" + cat,
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/GetProductByBO", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String GetProductByBO(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String booking = request.getParameter("booking_code").toString();
+		String branch = request.getParameter("branch_code").toString();
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/ProductPurchase/GetProduct",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("bookingcode", booking).put("branchcode", branch).toString());
+
+	}
+
+	@RequestMapping(value = "/getValidateBookingCode", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getValidateBookingCode(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String booking = request.getParameter("booking").toString();
+		String branch = request.getParameter("branch").toString();
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/productpurchase/ValidateBookingCode",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("bookingcode", booking).put("branchcode", branch).toString());
+
+	}
+
+	@RequestMapping(value = "/GetContact/{cif}", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String GetContact(@PathVariable("cif") String code, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/customer/getupdatecustinfo/" + code,
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/getKiniCintaku/det/{id}")
+	public ModelAndView getKiniCintakuDet(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			session.setAttribute("rshID", id);
+
+			// this.RSHID = id;
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("rshid", id);
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getKiniCintakuR/det/{id}")
+	public ModelAndView getKiniCintakuRDet(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			session.setAttribute("rshID", id);
+
+			// this.RSHID = id;
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("rshid", id);
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintakuR", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getKiniCintaku2/det/{id}")
+	public ModelAndView getKiniCintaku2Det(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			// this.RSHID = id;
+			session.setAttribute("rshID", id);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("rshid", id);
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku2", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getKiniCintaku3/det/{id}")
+	public ModelAndView getKiniCintaku3Det(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			// this.RSHID = id;
+			session.setAttribute("rshID", id);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("rshid", id);
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku3", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getKiniCintaku4/det/{id}")
+	public ModelAndView getKiniCintaku4Det(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			// this.RSHID = id;
+			session.setAttribute("rshID", id);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("name", session.getAttribute("usrname").toString());
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("rshid", id);
+			model.addAttribute("SERVER_IMG", this.SERVER_IMG);
+			model.addAttribute("SERVER_PHP", this.SERVER_PHP);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku4", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+	
+	@RequestMapping(value = "/getLKiniCintaku4/det/{id}")
+	public ModelAndView getKiniCintaku4DetLock(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			// this.RSHID = id;
+			session.setAttribute("rshID", id);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("name", session.getAttribute("usrname").toString());
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("rshid", id);
+			model.addAttribute("SERVER_IMG", this.SERVER_IMG);
+			model.addAttribute("SERVER_PHP", this.SERVER_PHP);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku4_lockback", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getKiniCintaku6/det/{id}")
+	public ModelAndView getKiniCintaku6Det(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			// this.RSHID = id;
+			session.setAttribute("rshID", id);
+			model.addAttribute("rshid", id);
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("name", session.getAttribute("usrname").toString());
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintaku6", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/getcustinfo", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getCustomerInfo(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String id = request.getParameter("id").toString();
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/detail",
+				session.getAttribute("accesskey").toString(), new JSONObject().put("id", id).toString());
+
+	}
+
+	@RequestMapping(value = "/getcustinfodetail", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getcustinfodetail(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String id = request.getParameter("email").toString();
+		return new RestServiceUnirest().requestPost(this.API_CUSTOMER + "/customer/detail",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("key", "email").put("val", id).toString());
+
+	}
+
+	@RequestMapping(value = "/getOTP", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getOTPCode(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String cif = request.getParameter("cif").toString();
+		return new RestServiceUnirest().requestPost(this.API_NOTIF + "/otp/code",
+				session.getAttribute("accesskey").toString(), new JSONObject().put("cif", cif).toString());
+
+	}
+
+	@RequestMapping(value = "/getVerification/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getVerification(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		String cif = request.getParameter("cif").toString();
+		String otp = request.getParameter("otp").toString();
+		if (session.getAttribute("rshID") != null && !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+			String rsh_id = session.getAttribute("rshID").toString();
+			
+			rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+			
+			return new RestServiceUnirest().requestPost(this.API_NOTIF + "/otp/authenticate",
+					session.getAttribute("accesskey").toString(),
+					new JSONObject().put("otp_code", otp).put("cif", cif).put("rsh_id", rsh_id).toString());
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+
+	}
+
+	@RequestMapping(value = "/saveKC/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String submitKC(@PathVariable("rshid") String rshid,
+			@ModelAttribute("KiniCintakuItem") KiniCintakuItem kc, HttpSession session) {
+		token.regenToken(session);
+		String x = "";
+		try {
+
+			if (session.getAttribute("rshID") != null
+					&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+
+				String rsh_id = session.getAttribute("rshID").toString();
+				rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+
+				JSONObject jUpdate = new JSONObject();
+				jUpdate.put("rsh_id", rsh_id);
+				// jUpdate.put("cif", kc.getCst_cif());
+				// jUpdate.put("otherincome", kc.getOther_income().replace(",", ""));
+				// jUpdate.put("business", kc.getCst_business());
+				// jUpdate.put("mothermeidenname", kc.getMother_name());
+				jUpdate.put("referral_code", kc.getRefferal_code());// 26
+
+				JSONObject jsonUpdate = new JSONObject(
+						new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+								session.getAttribute("accesskey").toString(), jUpdate.toString()));
+
+				/*
+				 * JSONObject jData = new JSONObject(); jData.put("cif", kc.getCst_cif());
+				 * jData.put("data", this.getDetail(kc));
+				 * 
+				 * JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+				 * this.API_CUSTOMER + "/customer/insertemergencycontact",
+				 * session.getAttribute("accesskey").toString(), jData.toString()));
+				 */
+				x = jsonUpdate.toString();
+			} else {
+				x = new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+						.toString();
+			}
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+	}
+
+	JSONArray getDetail(KiniCintakuItem sc) {
+
+		JSONArray jReturn = new JSONArray();
+
+		if (sc.getName1() != null && sc.getAddress1() != null && sc.getPhone1() != null
+				&& sc.getConnection1() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName1());
+			jDetail.put("phone", sc.getPhone1());
+			jDetail.put("address", sc.getAddress1());
+			jDetail.put("connection", sc.getConnection1());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getName2() != null && sc.getAddress2() != null && sc.getPhone2() != null
+				&& sc.getConnection2() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName2());
+			jDetail.put("phone", sc.getPhone2());
+			jDetail.put("address", sc.getAddress2());
+			jDetail.put("connection", sc.getConnection2());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getName3() != null && sc.getAddress3() != null && sc.getPhone3() != null
+				&& sc.getConnection3() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName3());
+			jDetail.put("phone", sc.getPhone3());
+			jDetail.put("address", sc.getAddress3());
+			jDetail.put("connection", sc.getConnection3());
+			jReturn.put(jDetail);
+
+		}
+		return jReturn;
+	}
+
+	private String convertDateToApiFormat(String date) {
+		String out = "";
+		SimpleDateFormat inFmt = new SimpleDateFormat("dd-mm-yyyy");
+		SimpleDateFormat outFmt = new SimpleDateFormat("yyyy-mm-dd");
+
+		try {
+			out = outFmt.format(inFmt.parse(date));
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return out;
+
+	}
+
+	@RequestMapping(value = "/saveDocImg/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String saveDocImg(@PathVariable("rshid") String rshid,@ModelAttribute("KiniCintakuRItem") KiniCintakuRItem kc, HttpSession session,
+			HttpServletRequest req) {
+		String x = "";
+		JSONObject jUpdate = new JSONObject();
+		try {
+			token.regenToken(session);
+
+			if (session.getAttribute("rshID") != null
+					&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+				
+				String rsh_id = session.getAttribute("rshID").toString();
+				rsh_id = (rsh_id== null && "".equals(rsh_id))? rshid : rsh_id;
+				
+				jUpdate.put("rsh_id", rsh_id);// 1
+				jUpdate.put("decision", "CustomerApprovedRequired");// 1
+				JSONObject jsonUpdate = new JSONObject(
+						new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+								session.getAttribute("accesskey").toString(), jUpdate.toString()));
+				x = jsonUpdate.toString();
+			} else {
+				x = new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+						.toString();
+			}
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+	}
+
+	@RequestMapping(value = "/saveKCR/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String submitKCR(@PathVariable("rshid") String rshid,
+			@ModelAttribute("KiniCintakuRItem") KiniCintakuRItem kc, HttpSession session) {
+		String x = "";
+		try {
+			token.regenToken(session);
+
+			if (session.getAttribute("rshID") != null
+					&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+				JSONObject jUpdate = new JSONObject();
+
+				String rsh_id = session.getAttribute("rshID").toString();
+				rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+
+				jUpdate.put("rsh_id", rsh_id);// 1
+				// jUpdate.put("cif", kc.getCst_cif());// 2
+				// jUpdate.put("fname", kc.getCst_fname());// 3
+				// jUpdate.put("lname", kc.getCst_lname());// 4
+				// jUpdate.put("ktp", kc.getCst_ktp());// 5
+				// jUpdate.put("npwp", kc.getCst_npwp());// 6
+				// jUpdate.put("cst_email", kc.getCst_email());// 6
+				// jUpdate.put("marital_status", kc.getCst_marital_status());// 7
+				// jUpdate.put("placeofbirth", kc.getCst_pob());// 8
+				// jUpdate.put("dateofbirth", this.convertDateToApiFormat(kc.getCst_dob()));// 9
+				// jUpdate.put("gender", kc.getCst_sex());// 10
+
+				// jUpdate.put("address", kc.getCst_address());// 11
+				// jUpdate.put("address_zipcode", kc.getCst_address_zipcode());// 12
+				// jUpdate.put("province", kc.getCst_address_prov());// 13
+				// jUpdate.put("municipality", kc.getCst_address_city());// 14
+				// jUpdate.put("districts", kc.getCst_address_kec());// 15
+
+				// jUpdate.put("address_ktp", kc.getCst_address_ktp());// 16
+				// jUpdate.put("province_ktp", kc.getCst_address_ktp_prov());// 17
+				// jUpdate.put("address_ktp_zipcode", kc.getCst_address_ktp_zipcode());// 18
+				// jUpdate.put("municipality_ktp", kc.getCst_address_ktp_city());// 19
+				// jUpdate.put("districts_ktp", kc.getCst_address_ktp_kec());// 20
+
+				// jUpdate.put("phone_mobile", kc.getCst_phone_mobile());// 21
+				// jUpdate.put("education", kc.getCst_education());// 22
+				// jUpdate.put("municipality", kc.getCst_municipality());//23
+				// jUpdate.put("address_city", kc.getCst_address_city());
+				// jUpdate.put("mothermeidenname", kc.getMother_name());// 24
+				// jUpdate.put("citizenship", kc.getCst_citizenshipR());// 25
+				// jUpdate.put("employment_type", kc.getCst_employment_type());
+				// jUpdate.put("work_since_month", kc.getCst_work_since_month());
+				// jUpdate.put("work_since_year", kc.getCst_work_since_year());
+				// int length_work = Integer.parseInt(kc.getCst_length_of_work()) * 12;
+				// jUpdate.put("length_of_work", "" + length_work);// 26
+				// jUpdate.put("salary", kc.getCst_salary_level().replace(".", ""));// 27
+
+				// jUpdate.put("type_of_work", kc.getCst_type_of_work());// 26
+				jUpdate.put("referral_code", kc.getRefferal_code());// 26
+
+				/*
+				 * JSONObject jsonUpdate = new JSONObject(new RestServiceUnirest().requestPost(
+				 * this.API_CUSTOMER + "/customer/updatecustinfopublic",
+				 * session.getAttribute("accesskey").toString(), jUpdate.toString()));
+				 */
+
+				JSONObject jsonUpdate = new JSONObject(
+						new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+								session.getAttribute("accesskey").toString(), jUpdate.toString()));
+
+				// /* JSONObject jData = new JSONObject();
+				// jData.put("cif", kc.getCst_cif());
+				// jData.put("data", this.getDetailR(kc));
+				//
+				// JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+				// this.API_CUSTOMER + "/customer/insertemergencycontact",
+				// session.getAttribute("accesskey").toString(), jData.toString()));
+				//
+				// JSONObject jDataP = new JSONObject();
+				// jData.put("cif", kc.getCst_cif());
+				// jData.put("data", this.getDetailPR(kc));
+				//
+				// JSONObject jsonP = new JSONObject(new RestServiceUnirest().requestPost(
+				// this.API_CUSTOMER + "/customer/insertemploymentdata",
+				// session.getAttribute("accesskey").toString(), jData.toString()));*/
+
+				x = jsonUpdate.toString();
+			} else {
+				x = new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+						.toString();
+			}
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+	}
+
+	@RequestMapping(value = "/saveProductPurchase/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String submitProductPurchase(@PathVariable("rshid") String rshid,
+			@ModelAttribute("ProductPurchaseItem") ProductPurchaseItem pp, HttpSession session) {
+		token.regenToken(session);
+		String x = "";
+		try {
+			if (session.getAttribute("rshID") != null
+					&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+
+				String rsh_id = session.getAttribute("rshID").toString();
+				rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+
+				JSONObject jData = new JSONObject();
+				jData.put("rshid", rshid);
+				jData.put("productcode", "A01");
+				jData.put("bookingcode", pp.getBooking_code());
+				jData.put("branchcode", pp.getBranch_code());
+				jData.put("internalcode", pp.getCst_internal_code());
+				jData.put("delivery", pp.getDelivery());
+				jData.put("address", pp.getAddress());
+				jData.put("user", this.SESSION_ID);
+				jData.put("data", this.getDetailPP(pp));
+
+				JSONObject json = new JSONObject(
+						new RestServiceUnirest().requestPost(this.API_SERVER + "/productpurchase/insertproductpurchase",
+								session.getAttribute("accesskey").toString(), jData.toString()));
+				x = json.toString();
+			} else {
+				x = new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+						.toString();
+			}
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+	}
+
+	JSONArray getDetailPP(ProductPurchaseItem ppi) {
+
+		JSONArray jReturn = new JSONArray();
+
+		if (ppi.getCategory1() != null && ppi.getJenis1() != null && ppi.getAmount1() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory1());
+			jDetail.put("item", ppi.getJenis1());
+			jDetail.put("amount", ppi.getAmount1().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+
+		if (ppi.getCategory2() != null && ppi.getJenis2() != null && ppi.getAmount2() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory2());
+			jDetail.put("item", ppi.getJenis2());
+			jDetail.put("amount", ppi.getAmount2().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory3() != null && ppi.getJenis3() != null && ppi.getAmount3() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory3());
+			jDetail.put("item", ppi.getJenis3());
+			jDetail.put("amount", ppi.getAmount3().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory4() != null && ppi.getJenis4() != null && ppi.getAmount4() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory4());
+			jDetail.put("item", ppi.getJenis4());
+			jDetail.put("amount", ppi.getAmount4().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory5() != null && ppi.getJenis5() != null && ppi.getAmount5() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory5());
+			jDetail.put("item", ppi.getJenis5());
+			jDetail.put("amount", ppi.getAmount5().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory6() != null && ppi.getJenis6() != null && ppi.getAmount6() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory6());
+			jDetail.put("item", ppi.getJenis6());
+			jDetail.put("amount", ppi.getAmount6().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory7() != null && ppi.getJenis7() != null && ppi.getAmount7() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory7());
+			jDetail.put("item", ppi.getJenis7());
+			jDetail.put("amount", ppi.getAmount7().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory8() != null && ppi.getJenis8() != null && ppi.getAmount8() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory8());
+			jDetail.put("item", ppi.getJenis8());
+			jDetail.put("amount", ppi.getAmount8().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory9() != null && ppi.getJenis9() != null && ppi.getAmount9() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory9());
+			jDetail.put("item", ppi.getJenis9());
+			jDetail.put("amount", ppi.getAmount9().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory10() != null && ppi.getJenis10() != null && ppi.getAmount10() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory10());
+			jDetail.put("item", ppi.getJenis10());
+			jDetail.put("amount", ppi.getAmount10().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory11() != null && ppi.getJenis11() != null && ppi.getAmount11() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory11());
+			jDetail.put("item", ppi.getJenis11());
+			jDetail.put("amount", ppi.getAmount11().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory12() != null && ppi.getJenis12() != null && ppi.getAmount12() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory12());
+			jDetail.put("item", ppi.getJenis12());
+			jDetail.put("amount", ppi.getAmount12().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory13() != null && ppi.getJenis13() != null && ppi.getAmount13() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory13());
+			jDetail.put("item", ppi.getJenis13());
+			jDetail.put("amount", ppi.getAmount13().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory14() != null && ppi.getJenis14() != null && ppi.getAmount14() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory14());
+			jDetail.put("item", ppi.getJenis14());
+			jDetail.put("amount", ppi.getAmount14().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+		if (ppi.getCategory15() != null && ppi.getJenis15() != null && ppi.getAmount15() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("category", ppi.getCategory15());
+			jDetail.put("item", ppi.getJenis15());
+			jDetail.put("amount", ppi.getAmount15().replace(",", ""));
+			jReturn.put(jDetail);
+
+		}
+
+		return jReturn;
+	}
+
+	@RequestMapping(value = "/getSimulation/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getSimulation(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		String dp = request.getParameter("dp").toString();
+		if (session.getAttribute("rshID") != null
+				&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+
+			String rsh_id = session.getAttribute("rshID").toString();
+			rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+
+			return new RestServiceUnirest().requestPost(this.API_SERVER + "/productpurchase/GenerateSimulasi",
+					session.getAttribute("accesskey").toString(),
+					new JSONObject().put("rshid", rsh_id).put("dp", dp).toString());
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+
+	}
+
+	@RequestMapping(value = "/saveSimulation/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String submitSimulation(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		String asktenor = request.getParameter("tenor").toString();
+		String rtenor = request.getParameter("tenor").toString();
+		// String ramount = request.getParameter("purpose").toString();
+		String installment = request.getParameter("installment").toString();
+		String purpose = request.getParameter("purpose").toString();
+		String interest = request.getParameter("interest").toString();
+
+		String cost_onetime = request.getParameter("cost_onetime").toString();
+		String cost_onetime_value = request.getParameter("cost_onetime_value").toString();
+		String cost_monthly = request.getParameter("cost_monthly").toString();
+		String cost_monthly_value = request.getParameter("cost_monthly_value").toString();
+		String dpPaid = request.getParameter("dpPaid").toString();
+
+		String x = "";
+		String z = "";
+		try {
+
+			if (session.getAttribute("rshID") != null
+					&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+
+				String rsh_id = session.getAttribute("rshID").toString();
+				rsh_id = (rsh_id == null && "".equals(rsh_id)) ? rshid : rsh_id;
+
+				JSONObject jData = new JSONObject();
+				jData.put("rsh_id", rsh_id);
+				jData.put("ask_tenor", asktenor);
+				jData.put("r_tenor", rtenor);
+				// jData.put("r_amount", ramount);
+				jData.put("r_installment", installment);
+				jData.put("r_purpose", purpose);
+				jData.put("interest_amount_promo", interest);
+
+				jData.put("cost_onetime", cost_onetime);
+				jData.put("cost_onetime_value", cost_onetime_value);
+				jData.put("cost_monthly", cost_monthly);
+				jData.put("cost_monthly_value", cost_monthly_value);
+				jData.put("dp_paid", dpPaid);
+
+				JSONObject json = new JSONObject(
+						new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+								session.getAttribute("accesskey").toString(), jData.toString()));
+
+				z = json.getString("status").toString();
+				if (z.equals("Success")) {
+					JSONObject jsonz = new JSONObject(new RestServiceUnirest().requestPost(
+							this.API_SERVER + "/kinicintaku/parse", session.getAttribute("accesskey").toString(),
+							new JSONObject().put("rsh_id", rsh_id).toString()));
+
+					x = jsonz.toString();
+				}
+			} else {
+				x = new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+						.toString();
+			}
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+
+		return x;
+
+	}
+
+
+
+	@RequestMapping(value = "/cancelKiniCintaku/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String cancelKiniCintaku(@PathVariable("rshid") String rshid, HttpSession session,
+			HttpServletRequest request) {
+		token.regenToken(session);
+		String id = request.getParameter("rshid").toString();
+		id = (id == null && "".equals(id)) ? rshid : id;
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/end",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("rsh_id", id).put("rsh_status", "CS Decline").toString());
+
+	}
+
+	@RequestMapping(value = "/saveSummary/{rshid}", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String saveSummary(@PathVariable("rshid")String rshid,HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		if (session.getAttribute("rshID") != null
+				&& !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+			
+			String rsh_id = session.getAttribute("rshID").toString();
+			rsh_id = (rsh_id== null && "".equals(rsh_id))? rshid : rsh_id;
+			
+			
+			
+			return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/cashier",
+					session.getAttribute("accesskey").toString(),
+					new JSONObject().put("rsh_id", rsh_id).toString());
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+
+	}
+
+	@RequestMapping(value = "/loadddl", method = RequestMethod.GET, produces = "application/json")
+	public @ResponseBody String loadddl(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		return new RestServiceUnirest().requestGet(this.API_CUSTOMER + "/ddown/ImageName",
+				session.getAttribute("accesskey").toString());
+
+	}
+
+	@RequestMapping(value = "/loadddladdr", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getDDLProvinsi(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String level = request.getParameter("level").toString();
+		String val = request.getParameter("val").toString();
+		return new RestServiceUnirest().requestPost(this.API_CUSTOMER + "/coverage/data",
+				session.getAttribute("accesskey").toString(),
+				new JSONObject().put("level", level).put("val", val).toString());
+
+	}
+
+	@RequestMapping(value = "/file/{id}/takepicture", method = RequestMethod.POST)
+	public @ResponseBody String crunchifySave2(@PathVariable("id") String id,
+			@ModelAttribute("uploadForm") UploadTest uploadForm, HttpServletRequest req,
+
+			HttpSession session) throws IllegalStateException, IOException {
+		List<MultipartFile> crunchifyFiles = uploadForm.getWebcam();
+		String myString = "";
+		token.regenToken(session);
+		String path = context.getRealPath("/WEB-INF/uploaded/user/");
+		DateFormat df = new SimpleDateFormat("ddMMyyyy_HHmmss");
+		String date = df.format(new Date());
+		if (null != crunchifyFiles && crunchifyFiles.size() > 0) {
+			for (MultipartFile multipartFile : crunchifyFiles) {
+				String fileName = id + "_" + date + "_" + multipartFile.getOriginalFilename();
+
+				String path_http = this.LOCAL_SERVER + req.getContextPath() + "/resourcesimage/uploaded/";
+				if (!"".equalsIgnoreCase(fileName)) {
+					File file = new File(path + fileName);
+					if (!file.exists()) {
+						//
+						try {
+							multipartFile.transferTo(file);
+							JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+									this.API_SERVER + "/kinicintaku/update",
+									session.getAttribute("accesskey").toString(), new JSONObject().put("rsh_id", id)
+											.put("doc_ktp", true).put("c_ktp_img", path_http + fileName).toString()));
+
+							if (json.getString("status").equals("Success")) {
+								myString += "Upload KTP : success <i class='fa fa-check-circle-o green'></i><br>";
+							} else {
+								file.delete();
+								myString += "Upload KTP : Failed  <i class='fa fa-times-circle red'></i><br>";
+							}
+
+						} catch (Exception e) {
+							myString += e.getMessage();
+							file.delete();
+						}
+
+					} else {
+						myString += "Failed to upload, file is already exist on the server <i class='fa fa-times-circle red'></i><br>";
+					}
+
+				} else {
+					myString += "Type of file is not allowed <i class='fa fa-times-circle red'></i><br>";
+				}
+			}
+		}
+
+		return myString;
+	}
+
+	@RequestMapping(value = "/file/{id}", method = RequestMethod.POST)
+	public @ResponseBody String crunchifySave(@PathVariable("id") String id,
+			@ModelAttribute("uploadForm") UploadTest uploadForm, HttpServletRequest req,
+
+			HttpSession session) throws IllegalStateException, IOException {
+		List<MultipartFile> crunchifyFiles = uploadForm.getFiles();
+		token.regenToken(session);
+		JSONObject jResult = new JSONObject();
+
+		String myString = "";
+
+		String path = context.getRealPath("/WEB-INF/uploaded/user/");
+		DateFormat df = new SimpleDateFormat("ddMMyyyy_HHmmss");
+		String date = df.format(new Date());
+		int countFile = 0;
+		if (null != crunchifyFiles && crunchifyFiles.size() > 0) {
+			for (MultipartFile multipartFile : crunchifyFiles) {
+				String fileName = id + "_" + date + "_" + multipartFile.getOriginalFilename();
+
+				String path_http = this.LOCAL_SERVER + req.getContextPath() + "/resourcesimage/uploaded/user/";
+				if (!"".equalsIgnoreCase(fileName)) {
+					File file = new File(path + fileName);
+					if (!file.exists()) {
+						//
+						try {
+							if (countFile == 0) {
+								multipartFile.transferTo(file);
+								JSONObject json = new JSONObject(
+										new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+												session.getAttribute("accesskey").toString(),
+												new JSONObject().put("rsh_id", Integer.parseInt(id))
+														.put("doc_ktp", true).put("c_ktp_img", path_http + fileName)
+														.toString()));
+
+								if (json.getString("status").equals("Success")) {
+									myString += "Upload KTP : success <i class='fa fa-check-circle-o green'></i><br>";
+								} else {
+									file.delete();
+									myString += "Upload KTP : Failed  <i class='fa fa-times-circle red'></i><br>";
+								}
+							} else if (countFile == 1) {
+								multipartFile.transferTo(file);
+								String ddlFileName = req.getParameter("ddlFileName").toString();
+								JSONObject json = new JSONObject(
+										new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+												session.getAttribute("accesskey").toString(),
+												new JSONObject().put("rsh_id", Integer.parseInt(id))
+														.put("doc_other", ddlFileName)
+														.put("c_other_img", path_http + fileName).toString()));
+								if (json.getString("status").equals("Success")) {
+									myString += "Upload " + ddlFileName
+											+ " : success <i class='fa fa-check-circle-o green'></i><br>";
+								} else {
+									file.delete();
+									myString += "Upload " + ddlFileName
+											+ " : Failed  <i class='fa fa-times-circle red'></i><br>";
+								}
+							} else if (countFile == 2) {
+								File file2 = new File(path + fileName + ".jpeg");
+								multipartFile.transferTo(file2);
+								// String ddlFileName = req.getParameter("ddlFileName").toString();
+								JSONObject json = new JSONObject(
+										new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/update",
+												session.getAttribute("accesskey").toString(),
+												new JSONObject().put("rsh_id", Integer.parseInt(id))
+														.put("c_pic_img", path_http + fileName + ".jpeg").toString()));
+								if (json.getString("status").equals("Success")) {
+									myString += "Upload Take Picture : success <i class='fa fa-check-circle-o green'></i><br>";
+								} else {
+									file.delete();
+									myString += "Upload Take Picture : Failed  <i class='fa fa-times-circle red'></i><br>";
+								}
+							}
+
+						} catch (Exception e) {
+							myString += e.getMessage() + " <i class='fa fa-times-circle red'></br>";
+							file.delete();
+						}
+
+					} else {
+						myString += "Failed to upload, file is already exist on the server <i class='fa fa-times-circle red'></i><br>";
+					}
+
+				} else {
+					myString += "Type of file is not allowed <i class='fa fa-times-circle red'></i><br>";
+				}
+				countFile++;
+			}
+		}
+
+		return myString;
+	}
+
+	private String getNameFile(Object nameFile) {
+		String[] nama;
+		if (nameFile != null && nameFile != "") {
+			nama = nameFile.toString().split("/");
+			return nama[nama.length - 1].toString();
+		} else {
+			return "";
+		}
+
+	}
+
+	@RequestMapping(value = "/gettemptable/{id}", method = RequestMethod.GET)
+	public @ResponseBody String getNotes(@PathVariable("id") String id, HttpServletRequest req, HttpSession session) {
+		token.regenToken(session);
+		JSONObject jsonCustInfo = new JSONObject(new RestServiceUnirest().requestPost(
+				this.API_SERVER + "/kinicintaku/ttable", session.getAttribute("accesskey").toString(),
+				new JSONObject().put("rsh_id", Integer.parseInt(id)).toString()));
+		return jsonCustInfo.toString();
+
+	}
+
+	@RequestMapping(value = "/cashier/getcustinfo", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String getcustinfo(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		String id = request.getParameter("id").toString();
+		return new RestServiceUnirest().requestPost(this.API_SERVER + "/kinicintaku/ttable",
+				session.getAttribute("accesskey").toString(), new JSONObject().put("rsh_id", id).toString());
+
+	}
+
+	@RequestMapping(value = "/cashier/saveSummary2", method = RequestMethod.POST, produces = "application/json")
+	public @ResponseBody String saveSummary2(HttpSession session, HttpServletRequest request) {
+		token.regenToken(session);
+		
+		if (session.getAttribute("rshID") != null && !session.getAttribute("rshID").toString().equalsIgnoreCase("undifined")) {
+			String rsh_id = session.getAttribute("rshID").toString();
+						
+			return new RestServiceUnirest().requestPost(this.API_LMS + "/submission/summarize",
+					session.getAttribute("accesskey").toString(), new JSONObject().put("rsh_id", rsh_id).toString());
+		} else {
+			return new JSONObject().put("status", "Error/Failed").put("message", "Session timeout, please relogin")
+					.toString();
+		}
+		
+		
+
+		/*
+		 * return new RestServiceUnirest().requestPost(this.API_LMS +
+		 * "/kinicintaku/update", session.getAttribute("accesskey").toString(), new
+		 * JSONObject().put("rsh_id", this.RSHID).put("rsh_decision ",
+		 * "CashierApproved").toString());
+		 */
+
+	}
+
+	@RequestMapping(value = "/cashier/upload_doc/{id}")
+	public ModelAndView getKiniCintakuUpload(ModelMap model, HttpSession session, HttpServletRequest req,
+			@PathVariable("id") String id) {
+		if (checkSession(session, "lvl_act_kc")) {
+			token.regenToken(session);
+			// model.addAttribute("id", id);
+			session.setAttribute("rshID", id);
+
+			// this.RSHID = id;
+			this.SESSION_ID = session.getAttribute("session_id").toString();
+			model.addAttribute("rshid", id);
+			model.addAttribute("api_server", this.API_SERVER);
+			model.addAttribute("api_customer", this.API_CUSTOMER);
+			model.addAttribute("api_notif", this.API_NOTIF);
+			model.addAttribute("local_server", this.LOCAL_SERVER + req.getContextPath());
+			return new ModelAndView("KiniCintakuUpload", model);
+
+		} else {
+			return new ModelAndView("redirect:/");
+		}
+	}
+
+	@RequestMapping(value = "/upload/{id}/{type}", method = RequestMethod.POST)
+	public @ResponseBody String uploadTakePicture(@PathVariable("id") String id, @PathVariable("type") String type,
+			@ModelAttribute("uploadForm") UploadTest uploadForm, HttpServletRequest req,
+
+			HttpSession session) throws IllegalStateException, IOException {
+		List<MultipartFile> crunchifyFiles = uploadForm.getFiles();
+		token.regenToken(session);
+		JSONObject jsonCustInfo = new JSONObject(new RestServiceUnirest().requestPost(
+				this.API_SERVER + "/kinicintaku/ttable", session.getAttribute("accesskey").toString(),
+				new JSONObject().put("rsh_id", Integer.parseInt(id)).toString()));
+		JSONArray jArCustInfo = jsonCustInfo.getJSONArray("data");
+
+		String cst_ktp = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_ktp_img"));
+		String c_other_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_other_img"));
+		String c_pic_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_pic_img"));
+
+		String myString = "";
+		String doc = req.getParameter("ddlDoc");
+		if (type.equals("capture") || type.equals("upload")) {
+
+			/* String path = context.getRealPath("/WEB-INF/uploaded/user/"); */
+
+			String path = con.getConfigValue("CustomPathImgUpload");
+
+			DateFormat df = new SimpleDateFormat("ddMMyyyy_HHmmss");
+			String date = df.format(new Date());
+
+			if (null != crunchifyFiles && crunchifyFiles.size() > 0) {
+				for (MultipartFile multipartFile : crunchifyFiles) {
+
+					if (doc.equals("KTP")) {
+						String fileName = id + "_" + date + "_KTP_rshid_" + id + "_"
+								+ multipartFile.getOriginalFilename();
+						if (type.equals("capture")) {
+
+							fileName = fileName + ".jpeg";
+						}
+						fileName = fileName.replaceAll("\\s+", "_");
+						/*
+						 * String path_http = this.LOCAL_SERVER + req.getContextPath() +
+						 * "/resourcesimage/uploaded/user/";
+						 */
+						String path_http = con.getConfigValue("URL_ACCESS_IMG") + "/";
+
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							File file2 = new File(path + cst_ktp);
+							if (!file.exists()) {
+								try {
+									/*
+									 * if (file2.exists()) { file2.delete(); }
+									 */
+									multipartFile.transferTo(file);
+
+									file.setReadable(true, false);
+									file.setExecutable(true, false);
+									file.setWritable(true, false);
+									JSONObject json = new JSONObject(new RestServiceUnirest()
+											.requestPost(this.API_SERVER + "/kinicintaku/update",
+													session.getAttribute("accesskey").toString(),
+													new JSONObject().put("rsh_id", Integer.parseInt(id))
+															.put("doc_ktp", true).put("c_ktp_img", path_http + fileName)
+															.toString()));
+
+									if (json.getString("status").equals("Success")) {
+
+										String nik = req.getParameter("nik");
+
+										JSONObject jsonC = new JSONObject(new RestServiceUnirest()
+												.requestPost(this.API_CUSTOMER + "/gallery/insGallery",
+														session.getAttribute("accesskey").toString(),
+														new JSONObject().put("cga_nik", nik)
+																.put("cga_filename", fileName)
+																.put("cga_path", path_http).toString()));
+										if (jsonC.getString("status").equals("Success")) {
+											myString = "Upload success <i class='fa fa-check-circle-o green'></i><br>";
+											// file2.delete();
+										} else {
+											file.delete();
+											myString = "Upload failed <i class='fa fa-times-circle red'></i><br>";
+										}
+
+									} else {
+										file.delete();
+										myString = "Upload failed <i class='fa fa-times-circle red'></i><br>";
+									}
+								} catch (Exception e) {
+									// TODO: handle exception
+									file.delete();
+									myString = "Oops, there is an error !<br> Error message : " + e.getMessage();
+								}
+
+							} else {
+								myString = "File is exist";
+							}
+						} else {
+							myString = "File not found";
+						}
+					} else if (doc.equals("Profile")) {
+						String fileName = id + "_" + date + "_profile_" + multipartFile.getOriginalFilename();
+						if (type.equals("capture")) {
+							fileName = fileName + ".jpeg";
+						}
+						fileName = fileName.replaceAll("\\s+", "_");
+						String path_http = con.getConfigValue("URL_ACCESS_IMG") + "/";
+						/*
+						 * String path_http = this.LOCAL_SERVER + req.getContextPath() +
+						 * "/resourcesimage/uploaded/user/";
+						 */
+
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							File file2 = new File(path + c_pic_img);
+							if (!file.exists()) {
+								try {
+									/*
+									 * if (file2.exists()) { file2.delete(); }
+									 */
+
+									multipartFile.transferTo(file);
+									file.setReadable(true, false);
+									file.setExecutable(true, false);
+									file.setWritable(true, false);
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("c_pic_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										String nik = req.getParameter("nik");
+
+										JSONObject jsonC = new JSONObject(new RestServiceUnirest()
+												.requestPost(this.API_CUSTOMER + "/gallery/insGallery",
+														session.getAttribute("accesskey").toString(),
+														new JSONObject().put("cga_nik", nik)
+																.put("cga_filename", fileName)
+																.put("cga_path", path_http).toString()));
+										if (jsonC.getString("status").equals("Success")) {
+											myString = "Upload success <i class='fa fa-check-circle-o green'></i><br>";
+											// file2.delete();
+										} else {
+											file.delete();
+											myString = "Upload failed <i class='fa fa-times-circle red'></i><br>";
+										}
+									} else {
+										file.delete();
+										myString = "Upload failed <i class='fa fa-times-circle red'></i><br>";
+									}
+								} catch (Exception e) {
+									// TODO: handle exception
+									file.delete();
+									myString = "Oops, there is an error !<br> Error message : " + e.getMessage();
+								}
+							} else {
+								myString = "File is exist";
+							}
+						} else {
+							myString = "File not found";
+						}
+					} else {
+						String fileName = id + "_" + date + "_" + doc + "_" + multipartFile.getOriginalFilename();
+						if (type.equals("capture")) {
+							fileName = fileName + ".jpeg";
+						}
+						
+						fileName = fileName.replaceAll("\\s+", "_");
+						/*
+						 * String path_http = this.LOCAL_SERVER + req.getContextPath() +
+						 * "/resourcesimage/uploaded/user/";
+						 */
+						String path_http = con.getConfigValue("URL_ACCESS_IMG") + "/";
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							File file2 = new File(path + c_other_img);
+							if (!file.exists()) {
+								try {
+									multipartFile.transferTo(file);
+									/*
+									 * if (file2.exists()) { file2.delete(); }
+									 */
+
+									file.setReadable(true, false);
+									file.setExecutable(true, false);
+									file.setWritable(true, false);
+									String ddlFileName = doc;
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("doc_other", ddlFileName)
+													.put("c_other_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										String nik = req.getParameter("nik");
+										JSONObject jsonC = new JSONObject(new RestServiceUnirest()
+												.requestPost(this.API_CUSTOMER + "/gallery/insGallery",
+														session.getAttribute("accesskey").toString(),
+														new JSONObject().put("cga_nik", nik)
+																.put("cga_filename", fileName)
+																.put("cga_path", path_http).toString()));
+										if (jsonC.getString("status").equals("Success")) {
+											myString = "Upload success <i class='fa fa-check-circle-o green'></i><br>";
+											// file2.delete();
+										} else {
+											file.delete();
+											myString = "Upload failed <i class='fa fa-times-circle red'></i><br>";
+										}
+										// myString = "Upload success <i class='fa fa-check-circle-o green'></i><br>";
+									} else {
+										file.delete();
+										myString = "Upload failed  <i class='fa fa-times-circle red'></i><br>";
+									}
+								} catch (Exception e) {
+									// TODO: handle exception
+									file.delete();
+									myString = "Oops, there is an error !<br> Error message : " + e.getMessage();
+								}
+							} else {
+								myString = "File is exist";
+							}
+						} else {
+							myString = "File not found";
+						}
+					}
+				}
+			} else {
+				myString = "No file upload";
+			}
+		} else if (type.equals("gallery")) {
+			if (doc.equals("KTP")) {
+				String ktp = req.getParameter("chkImg");
+				JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+						this.API_SERVER + "/kinicintaku/update", session.getAttribute("accesskey").toString(),
+						new JSONObject().put("rsh_id", Integer.parseInt(id)).put("doc_ktp", true).put("c_ktp_img", ktp)
+								.toString()));
+
+				if (json.getString("status").equals("Success")) {
+					myString = "Upload  success <i class='fa fa-check-circle-o green'></i><br>";
+				} else {
+					myString += "Upload failed  <i class='fa fa-times-circle red'></i><br>";
+				}
+			} else if (doc.equals("Profile")) {
+				String pic_img = req.getParameter("chkImg");
+				JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+						this.API_SERVER + "/kinicintaku/update", session.getAttribute("accesskey").toString(),
+						new JSONObject().put("rsh_id", Integer.parseInt(id)).put("c_pic_img", pic_img).toString()));
+				if (json.getString("status").equals("Success")) {
+					myString = "Upload  success <i class='fa fa-check-circle-o green'></i><br>";
+				} else {
+					myString = "Upload failed  <i class='fa fa-times-circle red'></i><br>";
+				}
+			} else {
+				String other_doc = req.getParameter("chkImg");
+				JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+						this.API_SERVER + "/kinicintaku/update", session.getAttribute("accesskey").toString(),
+						new JSONObject().put("rsh_id", Integer.parseInt(id)).put("doc_other", doc)
+								.put("c_other_img", other_doc).toString()));
+				if (json.getString("status").equals("Success")) {
+					myString = "Upload  success <i class='fa fa-check-circle-o green'></i><br>";
+				} else {
+					myString = "Upload failed  <i class='fa fa-times-circle red'></i><br>";
+				}
+			}
+		} else {
+			myString = "Invalid url upload";
+		}
+
+		return myString;
+
+	}
+
+	JSONArray getDetailR(KiniCintakuRItem sc) {
+
+		JSONArray jReturn = new JSONArray();
+
+		if (sc.getName1() != null && sc.getAddress1() != null && sc.getPhone1() != null
+				&& sc.getConnection1() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName1());
+			jDetail.put("phone", sc.getPhone1());
+			jDetail.put("address", sc.getAddress1());
+			jDetail.put("connection", sc.getConnection1());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getName2() != null && sc.getAddress2() != null && sc.getPhone2() != null
+				&& sc.getConnection2() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName2());
+			jDetail.put("phone", sc.getPhone2());
+			jDetail.put("address", sc.getAddress2());
+			jDetail.put("connection", sc.getConnection2());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getName3() != null && sc.getAddress3() != null && sc.getPhone3() != null
+				&& sc.getConnection3() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("name", sc.getName3());
+			jDetail.put("phone", sc.getPhone3());
+			jDetail.put("address", sc.getAddress3());
+			jDetail.put("connection", sc.getConnection3());
+			jReturn.put(jDetail);
+
+		}
+		return jReturn;
+	}
+
+	JSONArray getDetailPR(KiniCintakuRItem sc) {
+
+		JSONArray jReturn = new JSONArray();
+
+		if (sc.getCst_employment_type1() != null && sc.getCst_work_since_month1() != null
+				&& sc.getCst_work_since_year1() != null && sc.getConnection1() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("employmenttype", sc.getCst_employment_type1());
+			jDetail.put("worksincemonth", sc.getCst_work_since_month1());
+			jDetail.put("worksinceyear", sc.getCst_work_since_year1());
+			jDetail.put("companytype", sc.getCst_company_type1());
+			jDetail.put("companyname", sc.getCst_company_name1());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getCst_employment_type2() != null && sc.getCst_work_since_month2() != null
+				&& sc.getCst_work_since_year2() != null && sc.getConnection2() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("employmenttype", sc.getCst_employment_type2());
+			jDetail.put("worksincemonth", sc.getCst_work_since_month2());
+			jDetail.put("worksinceyear", sc.getCst_work_since_year2());
+			jDetail.put("companytype", sc.getCst_company_type2());
+			jDetail.put("companyname", sc.getCst_company_name2());
+			jReturn.put(jDetail);
+
+		}
+
+		if (sc.getCst_employment_type3() != null && sc.getCst_work_since_month3() != null
+				&& sc.getCst_work_since_year3() != null && sc.getConnection3() != null) {
+			JSONObject jDetail = new JSONObject();
+			jDetail.put("employmenttype", sc.getCst_employment_type3());
+			jDetail.put("worksincemonth", sc.getCst_work_since_month3());
+			jDetail.put("worksinceyear", sc.getCst_work_since_year3());
+			jDetail.put("companytype", sc.getCst_company_type3());
+			jDetail.put("companyname", sc.getCst_company_name3());
+			jReturn.put(jDetail);
+
+		}
+		return jReturn;
+	}
+
+	@RequestMapping(value = "/cashier/file/{id}/{type}", method = RequestMethod.POST)
+	public @ResponseBody String crunchifySave(@PathVariable("id") String id, @PathVariable("type") String typ,
+			@ModelAttribute("uploadForm") UploadTest uploadForm, Model map, HttpServletRequest req,
+
+			HttpSession session) throws IllegalStateException, IOException {
+		token.regenToken(session);
+		List<MultipartFile> crunchifyFiles = uploadForm.getFiles();
+
+		JSONObject jsonCustInfo = new JSONObject(new RestServiceUnirest().requestPost(
+				this.API_SERVER + "/kinicintaku/ttable", session.getAttribute("accesskey").toString(),
+				new JSONObject().put("rsh_id", Integer.parseInt(id)).toString()));
+		JSONArray jArCustInfo = jsonCustInfo.getJSONArray("data");
+
+		String c_ipb_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_ipb_img"));
+		String c_pk_img = this.getNameFile(jArCustInfo.getJSONObject(0).get("c_pk_img"));
+
+		JSONObject jIPB = new JSONObject();
+		JSONObject jPB = new JSONObject();
+
+		String path = context.getRealPath("/WEB-INF/uploaded/spb/");
+		DateFormat df = new SimpleDateFormat("ddMMyyyy_HHmmss");
+		String date = df.format(new Date());
+		int x = 0;
+		if (null != crunchifyFiles && crunchifyFiles.size() > 0) {
+			for (MultipartFile multipartFile : crunchifyFiles) {
+				String type = multipartFile.getContentType();
+
+				if (typ.equalsIgnoreCase("ipb")) {
+					if (type.equalsIgnoreCase("image/jpeg") || type.equalsIgnoreCase("application/pdf")
+							|| type.equalsIgnoreCase("image/png")) {
+
+						String fileName = id + "_ipb_" + date + "_" + multipartFile.getOriginalFilename();
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							if (!file.exists()) {
+								//
+								String path_http = this.LOCAL_SERVER + req.getContextPath()
+										+ "/resourcesimage/uploaded/spb/";
+								try {
+									multipartFile.transferTo(file);
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("c_ipb_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										jIPB.put("msg", "File IPB (Instruksi Penyerahan Barang) successfully uploaded");
+										jIPB.put("stat", true);
+										File files = new File(path + c_ipb_img);
+										files.delete();
+
+									} else {
+										jIPB.put("msg", "File IPB (Instruksi Penyerahan Barang) failed to upload");
+										jIPB.put("stat", false);
+										file.delete();
+									}
+
+								} catch (Exception e) {
+									jIPB.put("msg", e.getMessage());
+									jIPB.put("stat", false);
+
+									file.delete();
+								}
+
+							} else {
+								jIPB.put("msg",
+										"Failed to upload file IPB (Instruksi Penyerahan Barang), file is already exist on the server");
+								jIPB.put("stat", false);
+
+							}
+
+						} else {
+							jIPB.put("msg",
+									"Type of file IPB (Instruksi Penyerahan Barang) is not allowed ( files allowed : JPG/JPEG, PNG, PDF)");
+							jIPB.put("stat", false);
+
+						}
+					} else {
+						jIPB.put("msg",
+								"Type of file IPB (Instruksi Penyerahan Barang) is not allowed ( files allowed : JPG/JPEG, PNG, PDF)");
+						jIPB.put("stat", false);
+					}
+				} else if (typ.equalsIgnoreCase("sp")) {
+					if (type.equalsIgnoreCase("image/jpeg") || type.equalsIgnoreCase("application/pdf")
+							|| type.equalsIgnoreCase("image/png")) {
+
+						String fileName = id + "_pb_" + date + "_" + multipartFile.getOriginalFilename();
+						if (!"".equalsIgnoreCase(fileName)) {
+							File file = new File(path + fileName);
+							if (!file.exists()) {
+								//
+								String path_http = this.LOCAL_SERVER + req.getContextPath()
+										+ "/resourcesimage/uploaded/spb/";
+								try {
+									multipartFile.transferTo(file);
+									JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(
+											this.API_SERVER + "/kinicintaku/update",
+											session.getAttribute("accesskey").toString(),
+											new JSONObject().put("rsh_id", Integer.parseInt(id))
+													.put("c_pk_img", path_http + fileName).toString()));
+									if (json.getString("status").equals("Success")) {
+										jPB.put("msg", "File successfully uploaded");
+										jPB.put("stat", true);
+										File files = new File(path + c_pk_img);
+										files.delete();
+
+									} else {
+
+										jPB.put("msg", "Failed to upload, not found API");
+										jPB.put("stat", false);
+
+										file.delete();
+									}
+
+								} catch (Exception e) {
+
+									jPB.put("msg", "Internal Server Error");
+									jPB.put("stat", false);
+
+									file.delete();
+								}
+
+							} else {
+								jPB.put("msg", "Failed to upload, file is already exist on the server");
+								jPB.put("stat", false);
+
+							}
+
+						} else {
+							jPB.put("msg", "Type of file is not allowed (files allowed : JPG/JPEG, PNG, PDF)");
+							jPB.put("stat", false);
+
+						}
+					} else {
+						jPB.put("msg", "Type of file is not allowed (files allowed : JPG/JPEG, PNG, PDF)");
+						jPB.put("stat", false);
+					}
+				}
+
+				x++;
+			}
+		}
+
+		return new JSONObject().put("IPBStatus", jIPB).put("PBStatus", jPB).toString();
+	}
+
+}

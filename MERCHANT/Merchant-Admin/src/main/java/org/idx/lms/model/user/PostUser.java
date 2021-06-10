@@ -1,7 +1,7 @@
 package org.idx.lms.model.user;
 
 public class PostUser {
-	String p_usrid,p_name,p_nip,p_email,p_branchcode,p_spv,p_position,p_acclevel,p_efectivedate,p_status,p_usr, p_defaultpwd,p_tnt_alias, p_group_alias, p_partner_alias;
+	String p_usrid,p_name,p_nip,p_email,p_branchcode,p_spv,p_position,p_acclevel,p_efectivedate,p_status,p_usr, p_defaultpwd,p_tnt_alias, p_group_alias, p_partner_alias,p_is_merchant;
 	int p_log_id;
 	
 	public void setP_group_alias(String p_group_alias) {
@@ -107,6 +107,14 @@ public class PostUser {
 
 	public void setP_status(String p_status) {
 		this.p_status = p_status;
+	}
+	
+	public String is_merchant() {
+		return p_is_merchant;
+	}
+
+	public void setP_is_merchant(String p_is_merchant) {
+		this.p_is_merchant = p_is_merchant;
 	}
 
 	public String getP_usr() {

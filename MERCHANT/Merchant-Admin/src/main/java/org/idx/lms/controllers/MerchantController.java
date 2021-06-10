@@ -24,6 +24,7 @@ public class MerchantController {
 	private ConfigApps con = new ConfigApps();
 	private String API_PARAMETER = con.getConfigValue("ServerAPI-PARAMETER");
 	private String API_CUST = con.getConfigValue("ServerAPI-CUST");
+	private String API_CORE = con.getConfigValue("ServerAPI-CORE");
 	private String LOCAL_SERVER = con.getConfigValue("ServerLocal");
 	TokenRegen token = new TokenRegen();
 	
@@ -96,12 +97,60 @@ public class MerchantController {
 	}
 	
 
-	@RequestMapping(value = "/list", method = RequestMethod.GET)
-	public @ResponseBody String getListOfAccessLevel(HttpSession session, HttpServletRequest req) {
+	@RequestMapping(value = "/list", method = RequestMethod.POST)
+	public @ResponseBody String getListOfHistTransaction(HttpSession session, HttpServletRequest req) {
 		token.regenToken(session);
-		RestServiceUnirest objRest = new RestServiceUnirest();
-		return objRest.requestGet(this.API_PARAMETER + "/branch/list_branch",
-				session.getAttribute("accesskey").toString());
+		String x="";
+		try {
+			
+			JSONObject jData = new JSONObject();
+
+			
+			jData.put("trx_date_from",req.getParameter("transaction_start_date"));	
+			jData.put("trx_date_to", req.getParameter("transaction_end_date"));
+			jData.put("settle_date_from", req.getParameter("settlement_start_date"));
+			jData.put("settle_date_to", req.getParameter("settlement_end_date"));
+			jData.put("merchant_name", req.getParameter("store_name"));
+			jData.put("status", req.getParameter("status"));
+			jData.put("trx_norek", req.getParameter("rekening_number"));
+			
+			JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(this.API_CORE+ "/Merchant/ListTransactionHistory",
+								session.getAttribute("accesskey").toString(), jData.toString()));
+
+			x = json.toString();
+				
+			
+				
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+		return x;
+
+	}
+	
+	@RequestMapping(value = "/listvoid", method = RequestMethod.POST)
+	public @ResponseBody String getListOfVoid(HttpSession session, HttpServletRequest req) {
+		token.regenToken(session);
+		String x="";
+		try {
+			
+			JSONObject jData = new JSONObject();
+
+			
+			jData.put("rsh_id",req.getParameter("v_rsh_id"));	
+			
+			
+			JSONObject json = new JSONObject(new RestServiceUnirest().requestPost(this.API_CORE+ "/Merchant/ListTransactionHistory",
+								session.getAttribute("accesskey").toString(), jData.toString()));
+
+			x = json.toString();
+				
+			
+				
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+		return x;
 
 	}
 	

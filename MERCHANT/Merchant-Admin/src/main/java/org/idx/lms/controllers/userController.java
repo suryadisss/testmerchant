@@ -58,7 +58,7 @@ public class userController {
 	@RequestMapping(method = RequestMethod.GET)
 	public ModelAndView main(ModelMap model, HttpSession session, HttpServletRequest req,
 			@ModelAttribute("userManagement") userManagement us) {
-		if (checkSession(session, "lvl_adm_mgt")) {
+		if (checkSession(session, "lvl_adm_mgt_mer")) {
 			token.regenToken(session);
 			this.SESSION_ID = session.getAttribute("session_id").toString();
 
@@ -315,7 +315,13 @@ public class userController {
 
 				EncryptDiggest en = new EncryptDiggest();
 				String DEF_PASS = en.hashing(this.DEFAULT_PASSWORD);
-
+				String merchantdata=request.getParameter("is_merchant");
+				String isMerchant="False";
+				
+				
+				if(merchantdata!= null) {
+					isMerchant="True";
+				}
 				PostUser PostItem = new PostUser();
 				PostItem.setP_usrid(us.getTxtUserID().trim());
 				PostItem.setP_name(us.getTxtName());
@@ -330,6 +336,7 @@ public class userController {
 				PostItem.setP_status(new LibsGeneral().getTrueFalseStringUp(us.isChkStatus()));
 				PostItem.setP_group_alias(request.getParameter("ddlGroupPartner"));
 				PostItem.setP_parter_alias(request.getParameter("ddlPartnerDetail"));
+				PostItem.setP_is_merchant(isMerchant);
 				PostItem.setP_usr(session.getAttribute("session_id").toString());
 				PostItem.setP_defaultpwd(DEF_PASS);
 
@@ -383,7 +390,13 @@ public class userController {
 					x = new JSONObject().put("status", "Failed").put("message", "Upload Failed").toString();
 				}
 			} else if (us.getNew_edit_status().equals("edit")) {
-
+				String merchantdata=request.getParameter("is_merchant");
+				String isMerchants="False";
+				
+				
+				if(merchantdata!= null) {
+					isMerchants="True";
+				}
 				JSONObject jParam = new JSONObject();
 				PostUser PostItem = new PostUser();
 				PostItem.setP_usrid(us.getTxtUserID().trim());
@@ -398,6 +411,7 @@ public class userController {
 				PostItem.setP_efectivedate(us.getTxtEffectiveDate());
 				PostItem.setP_group_alias(request.getParameter("ddlGroupPartner"));
 				PostItem.setP_parter_alias(request.getParameter("ddlPartnerDetail"));
+				PostItem.setP_is_merchant(isMerchants);
 
 				PostItem.setP_status(new LibsGeneral().getTrueFalseStringUp(us.isChkStatus()));
 				PostItem.setP_usr(session.getAttribute("session_id").toString());

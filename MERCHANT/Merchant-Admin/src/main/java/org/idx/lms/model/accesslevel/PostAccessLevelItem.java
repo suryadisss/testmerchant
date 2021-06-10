@@ -1,7 +1,7 @@
 package org.idx.lms.model.accesslevel;
 
 public class PostAccessLevelItem {
-	String p_luid,p_lcode, p_lname,p_ldesc, p_lstatus, p_limfrom, p_limto, p_usr;
+	String p_luid,p_lcode, p_lname,p_ldesc, p_lstatus, p_limfrom, p_limto, p_usr, p_is_merchant;
 
 	public String getP_usr() {
 		return p_usr;
@@ -49,6 +49,14 @@ public class PostAccessLevelItem {
 
 	public void setP_lstatus(String p_lstatus) {
 		this.p_lstatus = p_lstatus;
+	}
+	
+	public String getP_is_merchant() {
+		return p_is_merchant;
+	}
+
+	public void setP_is_merchant(String p_is_merchant) {
+		this.p_is_merchant = p_is_merchant;
 	}
 
 	public String getP_limfrom() {

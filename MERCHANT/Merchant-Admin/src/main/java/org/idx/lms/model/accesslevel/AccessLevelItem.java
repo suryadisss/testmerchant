@@ -15,7 +15,7 @@ public class AccessLevelItem {
 		this.id = id;
 	}
 
-	boolean lustatus;
+	boolean lustatus,ismerchant;
 	
 
 	public String getNew_edit_status() {
@@ -72,6 +72,14 @@ public class AccessLevelItem {
 
 	public void setLustatus(boolean lustatus) {
 		this.lustatus = lustatus;
+	}
+	
+	public boolean ismerchant() {
+		return ismerchant;
+	}
+
+	public void setMerchant(boolean ismerchant) {
+		this.ismerchant = ismerchant;
 	}
 
 	public ArrayList<String> getInputcheckbox() {

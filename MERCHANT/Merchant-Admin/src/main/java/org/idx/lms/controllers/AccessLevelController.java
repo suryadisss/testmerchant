@@ -54,7 +54,7 @@ public class AccessLevelController {
 	@RequestMapping(method = RequestMethod.GET)
 	public ModelAndView dashboard(ModelMap model, HttpSession session, HttpServletRequest req) {
 		
-		if(checkSession(session,"lvl_adm_acl")){
+		if(checkSession(session,"lvl_adm_acl_mer")){
 			token.regenToken(session);
 			this.SESSION_ID = session.getAttribute("session_id").toString();
 			model.addAttribute("api_server", this.API_SERVER);
@@ -70,24 +70,30 @@ public class AccessLevelController {
 	}
 
 	@RequestMapping(value = "/dopost", method = RequestMethod.POST, produces = "application/json")
-	public @ResponseBody String submitData(@ModelAttribute("AccessLevel") AccessLevelItem item, HttpSession session) {
+	public @ResponseBody String submitData(@ModelAttribute("AccessLevel") AccessLevelItem item, HttpSession session, HttpServletRequest req) {
 		token.regenToken(session);
 		String result = "";
 		if (item.getNew_edit_status().equals("new")) {
 			if (this.isExistLevelCode(item.getLulevelcode(), session.getAttribute("accesskey").toString())) {
 				result = "User Role Code is Exist";
 			} else {
-				result = saveAccessLevel(item, session.getAttribute("accesskey").toString(), this.SESSION_ID);
+				result = saveAccessLevel(item, session.getAttribute("accesskey").toString(), this.SESSION_ID, req);
 			}
 		} else if (item.getNew_edit_status().equals("edit")) {
-			result = editAccessLevel(item, session.getAttribute("accesskey").toString(), this.SESSION_ID);
+			result = editAccessLevel(item, session.getAttribute("accesskey").toString(), this.SESSION_ID,req);
 
 		}
 		return result;
 	}
 
-	private String editAccessLevel(AccessLevelItem item, String token, String user) {
-
+	private String editAccessLevel(AccessLevelItem item, String token, String user,HttpServletRequest request) {
+		String merchantdata=request.getParameter("is_merchant");
+		String isMerchant="False";
+		
+		
+		if(merchantdata!= null) {
+			isMerchant="True";
+		}
 		PostAccessLevelItem postItem = new PostAccessLevelItem();
 		postItem.setP_luid(item.getId());
 		postItem.setP_lcode(item.getLulevelcode());
@@ -97,6 +103,7 @@ public class AccessLevelController {
 		postItem.setP_limto(item.getLulimitto());
 		postItem.setP_usr(user);
 		postItem.setP_lstatus(new LibsGeneral().getTrueFalseStringUp(item.isLustatus()));
+		postItem.setP_is_merchant(isMerchant);
 		ArrayList<String> temps = item.getInputcheckbox();
 		Gson gson = new Gson();
 		String data = "[" + gson.toJson(postItem).toString() + "]";
@@ -144,7 +151,14 @@ public class AccessLevelController {
 
 	}
 
-	private String saveAccessLevel(AccessLevelItem item, String token, String user) {
+	private String saveAccessLevel(AccessLevelItem item, String token, String user, HttpServletRequest request) {
+		String merchantdata=request.getParameter("is_merchant");
+		String isMerchant="False";
+		
+		
+		if(merchantdata!= null) {
+			isMerchant="True";
+		}
 		PostAccessLevelItem postItem = new PostAccessLevelItem();
 		postItem.setP_lcode(item.getLulevelcode());
 		postItem.setP_ldesc(item.getLuleveldescription());
@@ -152,9 +166,11 @@ public class AccessLevelController {
 		postItem.setP_limfrom(item.getLulimitfrom());
 		postItem.setP_limto(item.getLulimitto());
 		postItem.setP_lstatus(new LibsGeneral().getTrueFalseStringUp(item.isLustatus()));
+		postItem.setP_is_merchant(isMerchant);
 		ArrayList<String> temps = item.getInputcheckbox();
 		Gson gson = new Gson();
 		String data = "[" + gson.toJson(postItem).toString() + "]";
+	
 		RestServiceUnirest objRest = new RestServiceUnirest();
 		String ResultInsert = objRest.requestPost(this.API_SERVER_CORE + "/accesslevel/postJDataInsertRecord/",
 				token, data);
@@ -211,9 +227,27 @@ public class AccessLevelController {
 	@RequestMapping(value = "/getlistlevel", method = RequestMethod.GET)
 	public @ResponseBody String getListOfAccessLevel(HttpSession session, HttpServletRequest req) {
 		token.regenToken(session);
-		RestServiceUnirest objRest = new RestServiceUnirest();
-		return objRest.requestGet(this.API_SERVER_CORE + "/accesslevel/getDataListOfLevel",
-				session.getAttribute("accesskey").toString());
+		
+		String x="";
+		try {
+
+			JSONObject jData = new JSONObject();
+			jData.put("p_usrid", this.SESSION_ID);
+
+			JSONObject json = new JSONObject(
+					new RestServiceUnirest().requestPost(this.API_SERVER_CORE + "/accesslevel/getDataListOfLevel",
+							session.getAttribute("accesskey").toString(), jData.toString()));
+
+			x = json.toString();
+
+			String az = "";
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+		return x;
+		
+		
 
 	}
 
@@ -241,9 +275,26 @@ public class AccessLevelController {
 	@RequestMapping(value = "/getparentacc", method = RequestMethod.GET)
 	public @ResponseBody String getparentacc(HttpSession session, HttpServletRequest req) {
 		token.regenToken(session);
-		RestServiceUnirest objRest = new RestServiceUnirest();
-		return objRest.requestGet(this.API_SERVER_CORE + "/accesslevel/getDataParentLevel",
-				session.getAttribute("accesskey").toString());
+		String x="";
+		try {
+
+			JSONObject jData = new JSONObject();
+			jData.put("p_usrid", this.SESSION_ID);
+
+			JSONObject json = new JSONObject(
+					new RestServiceUnirest().requestPost(this.API_SERVER_CORE + "/accesslevel/getDataParentLevel",
+							session.getAttribute("accesskey").toString(), jData.toString()));
+
+			x = json.toString();
+
+			String az = "";
+
+		} catch (Exception e) {
+			x = e.getMessage();
+		}
+		return x;
+		
+	
 	}
 
 	@RequestMapping(value = "/getdatachild/{id}", method = RequestMethod.GET)

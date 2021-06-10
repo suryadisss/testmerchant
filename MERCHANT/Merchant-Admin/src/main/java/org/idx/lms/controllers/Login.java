@@ -209,6 +209,7 @@ public class Login {
 						JSONArray jaData = jActLog.getJSONArray("data");
 						String chkDate = isDateValid(jaData.getJSONObject(0).getString("changeddate"));
 						if (jaData.length() > 0) {
+							if(  jaData.getJSONObject(0).getBoolean("usr_is_merchant")) {
 								if (jaData.getJSONObject(0).getBoolean("usrstatus")) {
 									if (jaData.getJSONObject(0).getInt("usrislogin") == 0) {
 										if (this.check_efective(jaData.getJSONObject(0).getString("usrefectivedate"))
@@ -394,6 +395,9 @@ public class Login {
 	
 									message.put("success", false).put("message",
 											"Sorry, the username has not been activated or is blocked");
+								}
+								}else {
+								message.put("success", false).put("message", "You are operation user");
 								}
 								
 							} else {  // (jaData.length() > 0)

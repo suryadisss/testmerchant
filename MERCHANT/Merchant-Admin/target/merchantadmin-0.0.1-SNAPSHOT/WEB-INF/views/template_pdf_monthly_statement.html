@@ -1,0 +1,51 @@
+<html>
+<head>
+<title>Monthly Statement</title>
+<link href="style.css" rel="stylesheet" type="text/css" />
+<link media="all"
+	href="../../resources/libs/bootstrap/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+<link media="all"
+	href="../../resources/libs/font-awesome/css/font-awesome.min.css"
+	rel="stylesheet" />
+<style type="text/css">
+@media all {
+	.page-break {
+		display: none;
+	}
+	table, th, td {
+		margin: 0px;
+		border-top: 0 solid black;
+		border-bottom: 0 solid black;
+		border-left: 0 solid black;
+		border-rigth: 0 solid black;
+		border-spacing: 0;
+	}
+}
+
+@media print {
+	.page-break {
+		display: block;
+		page-break-before: always;
+	}
+	table, th, td {
+		margin: 0px;
+		border-top: 0 solid black;
+		border-bottom: 0 solid black;
+		border-left: 0 solid black;
+		border-rigth: 0 solid black;
+		border-spacing: 0;
+	}
+}
+</style>
+</head>
+<body style="font-size: 8pt;">
+	<center>
+		<h3>MONTHLY STATEMENT</h3>
+	</center>
+	<h4>Bulan : *bulan*</h4>
+	<p style="border-bottom: 1px solid 1px;"></p>
+	*table_statement*
+
+</body>
+</html>
